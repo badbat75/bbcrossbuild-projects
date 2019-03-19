@@ -1,0 +1,10 @@
+# Build recipe for tests
+
+create_sysroot moode-empty.tar.xz &&
+sed -i "s|/usr/lib/arm-linux-gnueabihf/libicu|${SYSROOT}/usr/lib/arm-linux-gnueabihf/libicu|g" ${SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/libical.pc
+
+#build moode/libmpdclient-2.16
+#build moode/mpd-0.21.4
+build moode/mpc-0.31
+#build moode/ffmpeg-4.1.1-stage1
+#build raspbian/subunit-1.3.0

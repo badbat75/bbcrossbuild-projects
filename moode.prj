@@ -1,0 +1,67 @@
+# Build recipe for moode mediacenter
+
+## Enable LTO both for kernel and applications
+LTOENABLE=1
+KERN_LTOENABLE=0
+
+create_sysroot moode-empty.tar.xz &&
+
+# Download moode-sources
+build moode/moode-r44
+
+# STEP 1 - Modify Raspbian Lite and create a new, base image
+build moode/rpi-kernel-4.19-master
+
+# STEP 2 - Expand the root partition to 3GB
+# STEP 3 - Install core packages
+build raspbian/mediainfo-18.12-2
+
+# STEP 4 - Install enhanced networking and bluetooth stack
+build moode/bluez-5.50
+build moode/bluez-alsa-1.3.1
+
+# STEP 5 - Install Rotary encoder driver
+build moode/rotenc-moode-r44
+
+# STEP 6 - Compile and install MPD
+build moode/mpd-0.21.5
+build moode/mpc-0.31
+
+# STEP 7 - Create moOde runtime environment
+# STEP 8 - Install moOde sources and configs
+# STEP 9 - Alsaequal
+# STEP 10 - Optionally squash /var/www
+# STEP 12 - Launch and configure moOde!
+# STEP 13 - Final prep for image
+
+# COMPONENT 1 - MiniDLNA
+build raspbian/minidlna-1.2.1
+
+# COMPONENT 2 - Auto-shuffle
+build moode/ashuffle-1.1.2
+
+# COMPONENT 3 - MPD Audio Scrobblea
+build moode/mpdas-master
+
+# COMPONENT 4A - Shairport-sync
+build moode/shairport-sync-3.3.0
+
+# COMPONENT 4B - Librespot
+build moode/librespot-master
+# COMPONENT 5 - Squeezelite
+build moode/squeezelite-master
+
+# COMPONENT 6 - Upmpdcli
+build moode/upmpdcli-1.4.1
+build moode/libupnppsamples-master  
+
+# COMPONENT 7 - Optionally install gmusicapi
+setup_python 3.5.3
+build python/gmusicapi-12.0.0
+
+# COMPONENT 8 - Local UI display 
+# COMPONENT 9 - Allo Piano 2.1 Firmware
+# COMPONENT 10 - Broadcom Bluetooth devices firmwares
+#
+# FINAL - Clean up
+
