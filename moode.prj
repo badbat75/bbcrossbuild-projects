@@ -47,7 +47,7 @@ build moode/mpdas-master
 build moode/shairport-sync-3.3.0
 
 # COMPONENT 4B - Librespot
-setup_cargo
+setup_rust
 build moode/librespot-master
 
 # COMPONENT 5 - Squeezelite
