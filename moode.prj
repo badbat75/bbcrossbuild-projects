@@ -4,7 +4,9 @@
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot moode-empty.tar.xz &&
+create_sysroot moode-empty.tar.xz
+setup_rust
+setup_python
 
 # Download moode-sources
 build moode/moode-r44
@@ -47,7 +49,6 @@ build moode/mpdas-master
 build moode/shairport-sync-3.3.0
 
 # COMPONENT 4B - Librespot
-setup_rust
 build moode/librespot-master
 
 # COMPONENT 5 - Squeezelite
@@ -58,7 +59,6 @@ build moode/upmpdcli-1.4.1
 build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
-setup_python
 build python/gmusicapi-12.0.0
 
 # COMPONENT 8 - Local UI display 
