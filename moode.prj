@@ -1,5 +1,9 @@
 # Build recipe for moode mediacenter
 
+## Enable shared libraries (default) but disable static ones
+BUILD_LIBSHARED=1
+BUILD_LIBSTATIC=0
+
 ## Enable LTO both for kernel and applications
 LTOENABLE=1
 KERN_LTOENABLE=0
