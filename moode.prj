@@ -71,3 +71,4 @@ build python/gmusicapi-12.0.0
 #
 # FINAL - Clean up
 
+install_gcclibs
