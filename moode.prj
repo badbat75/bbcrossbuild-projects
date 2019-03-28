@@ -24,9 +24,9 @@ build raspbian/mediainfo-18.12-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/bluez-5.50
-#build moode/bluez-alsa-1.3.1
+build moode/bluez-alsa-1.3.1
 ### Install a2dp-volume branch of blue-alsa from joerg-krause
-build moode/bluez-alsa-volume-1.2.0
+#build moode/bluez-alsa-volume-1.2.0
 
 # STEP 5 - Install Rotary encoder driver
 build moode/rotenc-moode-r44
