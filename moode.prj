@@ -15,11 +15,12 @@ setup_python
 # Download moode-sources
 build moode/moode-r44
 
-build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-3
-build raspbian/hostapd_2.7+git20190128+0c1e29f-3
-
 # STEP 1 - Modify Raspbian Lite and create a new, base image
 build moode/rpi-kernel-4.19-master
+build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-3
+build raspbian/hostapd_2.7+git20190128+0c1e29f-3
+build raspbian/iw_5.0.1-1
+build raspbian/crda_3.18-1
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
