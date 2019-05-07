@@ -10,7 +10,7 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190507-152146-moode-empty-dev.tar.xz
+create_sysroot moode-empty.tar.xz
 setup_rust
 setup_python
 
@@ -28,8 +28,6 @@ build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-5
 build raspbian/hostapd_2.7+git20190128+0c1e29f-5
 build raspbian/iw_5.0.1-1
 build moode/crda_3.18-1
-# Disabled due to python3 incompatibility
-#build moode/crda_4.14
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
@@ -38,17 +36,13 @@ build raspbian/mediainfo-18.12-2
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/bluez-5.50
 build moode/pi-bluetooth-master
-#build moode/bluez-alsa-1.3.1
-build moode/bluez-alsa-1.4.0
-### Install a2dp-volume branch of blue-alsa from joerg-krause
-#build moode/bluez-alsa-volume-1.2.0
+build moode/bluez-alsa-1.3.1
 
 # STEP 5 - Install Rotary encoder driver
 build moode/rotenc-moode-${MOODEREL}
 
 # STEP 6 - Compile and install MPD
-#build moode/mpd-0.21.6
-build moode/mpd-0.21.8
+build moode/mpd-0.21.6
 build moode/mpc-0.31
 
 # STEP 7 - Create moOde runtime environment
@@ -186,5 +180,5 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 EOF
 
 install_gcclibs
-#remove_devfiles
-#create_selfextracting_archive
+remove_devfiles
+create_selfextracting_archive
