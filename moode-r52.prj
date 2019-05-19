@@ -11,6 +11,7 @@ LTOENABLE=1
 KERN_LTOENABLE=0
 
 create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190513-142911-moode-empty-dev.tar.xz
+setup_gcc
 setup_rust
 setup_python
 
@@ -38,16 +39,12 @@ build raspbian/mediainfo-18.12-2
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/bluez-5.50
 build moode/pi-bluetooth-master
-#build moode/bluez-alsa-1.3.1
 build moode/bluez-alsa-1.4.0
-### Install a2dp-volume branch of blue-alsa from joerg-krause
-#build moode/bluez-alsa-volume-1.2.0
 
 # STEP 5 - Install Rotary encoder driver
 build moode/rotenc-moode-${MOODEREL}
 
 # STEP 6 - Compile and install MPD
-#build moode/mpd-0.21.6
 build moode/mpd-0.21.8
 build moode/mpc-0.31
 
@@ -187,5 +184,6 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 EOF
 
 install_gcclibs
-#remove_devfiles
+remove_devfiles
 create_selfextracting_archive
+mv ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.sfx ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/moode.sfx
