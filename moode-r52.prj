@@ -23,14 +23,11 @@ create_key_sscertificate
 build moode/moode-${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-#build moode/rpi-kernel-4.19-master
-build raspbian/rpi-kernel-4.14-1.20190429-1
+build raspbian/rpi-kernel-4.14-1.20190401-1
 build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-5
 build raspbian/hostapd_2.7+git20190128+0c1e29f-5
 build raspbian/iw_5.0.1-1
 build moode/crda_3.18-1
-# Disabled due to python3 incompatibility
-#build moode/crda_4.14
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
