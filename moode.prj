@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r53
+MOODEREL=r531
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -24,8 +24,8 @@ build moode/moode-${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
 build development/rpi-kernel-4.19-master
-build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-5
-build raspbian/hostapd_2.7+git20190128+0c1e29f-5
+build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-6
+build raspbian/hostapd_2.7+git20190128+0c1e29f-6
 build raspbian/iw_5.0.1-1
 build moode/crda_3.18-1
 # Disabled due to python3 incompatibility
