@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r53
+MOODEREL=r531
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -23,7 +23,7 @@ create_key_sscertificate
 build moode/moode-${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build moode/rpi-kernel-4.19.46
+build moode/rpi-kernel-4.19.50
 #build raspbian/rpi-kernel-4.14-1.20190401-1
 build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-5
 build raspbian/hostapd_2.7+git20190128+0c1e29f-5
@@ -78,7 +78,7 @@ build moode/upmpdcli-1.4.1
 build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
-build python/gmusicapi-12.0.0
+build python/gmusicapi-12.1.0
 
 # COMPONENT 8 - Local UI display
 
