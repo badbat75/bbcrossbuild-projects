@@ -1,0 +1,23 @@
+## Enable shared libraries (default) but disable static ones
+BUILD_LIBSHARED=1
+BUILD_LIBSTATIC=0
+
+## Enable LTO both for kernel and applications
+LTOENABLE=1
+KERN_LTOENABLE=0
+
+#create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/...
+bootstrap_sysroot development/rpi-kernel-4.19-master development/glibc_2.29
+#setup_gcc
+#setup_rust
+#setup_python
+
+#create_key_sscertificate
+
+#clean_project
+
+build development/rpi-kernel-4.19-master
+
+#install_gcclibs
+#remove_devfiles
+#create_selfextracting_archive
