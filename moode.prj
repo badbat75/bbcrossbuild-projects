@@ -10,7 +10,7 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190808-215105-moode-r54-empty-dev.tar.xz
+create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190808-215105-moode-r60-empty-dev.tar.xz
 setup_gcc
 setup_rust
 setup_python
@@ -21,9 +21,6 @@ create_key_sscertificate
 
 # Download moode-sources
 build development/moode_${MOODEREL}
-
-# udisks-glue
-build raspbian/udisks-glue_1.3.5-1
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
 build development/rpi-kernel-4.19-master
@@ -36,18 +33,18 @@ build moode/crda_3.18-1
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
-build moode/mediainfo_19.07
+build moode/mediainfo_19.09
+
+# USB mounter
+#build raspbian/udisks-glue_1.3.5-1
+build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/bluez-5.50
 build moode/pi-bluetooth-master
 build moode/bluez-alsa-1.4.0
 
-# STEP 5 - Install Rotary encoder driver
-build development/rotenc-moode_${MOODEREL}
-
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.13
+build moode/mpd_0.21.14
 build moode/mpc-0.32
 
 # STEP 7 - Create moOde runtime environment
@@ -58,7 +55,7 @@ build moode/mpc-0.32
 # STEP 13 - Final prep for image
 
 # COMPONENT 1 - MiniDLNA
-build raspbian/minidlna-1.2.1
+build raspbian/minidlna_1.2.1+dfsg-1
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle-1.1.2
@@ -70,7 +67,7 @@ build moode/mpdas-master
 build moode/shairport-sync_3.3.2
 
 # COMPONENT 4B - Librespot
-build moode/librespot-master
+build development/librespot-master
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite-master
@@ -114,6 +111,7 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	echo "pi:moodeaudio" | chpasswd
 
 	# File permissions
+	chown root:plugdev /usr/bin/udevil
 	#chown root:netdev /etc/dhcpcd.conf
 	chown -R pi:pi /home/pi
 	chown -R mpd:audio /var/lib/mpd
@@ -187,5 +185,4 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 EOF
 
 install_gcclibs
-#remove_devfiles
-create_selfextracting_archive
+create_selfextracting_archive remove_devfiles

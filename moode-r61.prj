@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r60
+MOODEREL=r61
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -26,21 +26,17 @@ build moode/moode_${MOODEREL}
 build raspbian/udisks-glue_1.3.5-1
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-#build raspbian/rpi-kernel-4.19-1.20190620-1
-build moode/rpi-kernel_4.19.65
+build moode/rpi-kernel_4.19.67
 build raspbian/wpa_supplicant_2.9-1
 build raspbian/hostapd_2.9-1
 build raspbian/iw_5.0.1-1
 build moode/crda_3.18-1
-# Disabled due to python3 incompatibility
-#build moode/crda_4.14
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
 build moode/mediainfo_19.07
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/bluez-5.50
 build moode/pi-bluetooth-master
 build moode/bluez-alsa-1.4.0
 
@@ -59,7 +55,7 @@ build moode/mpc-0.32
 # STEP 13 - Final prep for image
 
 # COMPONENT 1 - MiniDLNA
-build raspbian/minidlna-1.2.1
+build raspbian/minidlna_1.2.1+dfsg-1
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle-1.1.2
@@ -71,7 +67,7 @@ build moode/mpdas-master
 build moode/shairport-sync_3.3.2
 
 # COMPONENT 4B - Librespot
-build moode/librespot-master
+build moode/librespot_51a634d
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite-master
@@ -126,6 +122,7 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	chown minidlna:minidlna /var/lib/minidlna
 
 	# Start-up configuration
+	locale-gen it_IT.UTF-8
 	touch /boot/ssh
 	sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt
 	sed -i 's/raspberrypi/moode/' /etc/hostname
@@ -192,6 +189,5 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 EOF
 
 install_gcclibs
-remove_devfiles
-create_selfextracting_archive
+create_selfextracting_archive remove_devfiles
 mv ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.sfx ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/moode.sfx

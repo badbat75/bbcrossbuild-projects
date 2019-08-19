@@ -180,5 +180,4 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 EOF
 
 install_gcclibs
-remove_devfiles
-create_selfextracting_archive
+create_selfextracting_archive remove_devfiles

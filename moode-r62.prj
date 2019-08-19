@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r531
+MOODEREL=r62
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -10,7 +10,7 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190613-155436-moode-r53-empty-dev.tar.xz
+create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20190808-215105-moode-r60-empty-dev.tar.xz
 setup_gcc
 setup_rust
 setup_python
@@ -20,32 +20,30 @@ create_key_sscertificate
 #clean_project
 
 # Download moode-sources
-build moode/moode-${MOODEREL}
+build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build raspbian/rpi-kernel-4.19-1.20190620-1
-build raspbian/wpa_supplicant_2.7+git20190128+0c1e29f-6
-build raspbian/hostapd_2.7+git20190128+0c1e29f-6
+build moode/rpi-kernel_4.19.71
+build raspbian/wpa_supplicant_2.9-1
+build raspbian/hostapd_2.9-1
 build raspbian/iw_5.0.1-1
 build moode/crda_3.18-1
-# Disabled due to python3 incompatibility
-#build moode/crda_4.14
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
-build raspbian/mediainfo-18.12-2
+build moode/mediainfo_19.09
+
+# USB mounter
+#build raspbian/udisks-glue_1.3.5-1
+build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/bluez-5.50
 build moode/pi-bluetooth-master
 build moode/bluez-alsa-1.4.0
 
-# STEP 5 - Install Rotary encoder driver
-build moode/rotenc-moode-${MOODEREL}
-
 # STEP 6 - Compile and install MPD
-build moode/mpd-0.21.8
-build moode/mpc-0.31
+build moode/mpd_0.21.13
+build moode/mpc-0.32
 
 # STEP 7 - Create moOde runtime environment
 # STEP 8 - Install moOde sources and configs
@@ -55,7 +53,7 @@ build moode/mpc-0.31
 # STEP 13 - Final prep for image
 
 # COMPONENT 1 - MiniDLNA
-build raspbian/minidlna-1.2.1
+build raspbian/minidlna_1.2.1+dfsg-1
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle-1.1.2
@@ -64,20 +62,20 @@ build moode/ashuffle-1.1.2
 build moode/mpdas-master
 
 # COMPONENT 4A - Shairport-sync
-build moode/shairport-sync-3.3.1
+build moode/shairport-sync_3.3.2
 
 # COMPONENT 4B - Librespot
-build moode/librespot-master
+build moode/librespot_51a634d
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite-master
 
 # COMPONENT 6 - Upmpdcli
-build moode/upmpdcli-1.4.1
+build moode/upmpdcli_1.4.2
 build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
-build python/gmusicapi-12.1.0
+build python/gmusicapi_12.1.1
 
 # COMPONENT 8 - Local UI display
 
@@ -111,8 +109,10 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	echo "pi:moodeaudio" | chpasswd
 
 	# File permissions
+	chown root:plugdev /usr/bin/udevil
 	#chown root:netdev /etc/dhcpcd.conf
 	chown -R pi:pi /home/pi
+	chown www-data:www-data /var/local/php
 	chown -R mpd:audio /var/lib/mpd
 	chown -R mpd:audio /var/log/mpd
 	chown mpd:audio /etc/mpd.conf
@@ -121,6 +121,7 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	chown minidlna:minidlna /var/lib/minidlna
 
 	# Start-up configuration
+	#locale-gen it_IT.UTF-8
 	touch /boot/ssh
 	sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt
 	sed -i 's/raspberrypi/moode/' /etc/hostname
@@ -142,10 +143,10 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	sqlite3 /var/local/www/db/moode-sqlite3.db "update cfg_system set value='Default' where param='themename'"
 
 	# AlsaEqual
+	[ -f /usr/share/alsa/alsa.conf.d/equal.conf ] && rm /usr/share/alsa/alsa.conf.d/equal.conf
 	amixer -D alsaequal > /dev/null
 	chmod 0755 /usr/local/bin/alsaequal.bin
 	chown mpd:audio /usr/local/bin/alsaequal.bin
-	[ -f /usr/share/alsa/alsa.conf.d/equal.conf ] && rm /usr/share/alsa/alsa.conf.d/equal.conf
 
 	# MPD configuration
 	#su - mpd -c "/usr/bin/mpd /etc/mpd.conf"
@@ -158,7 +159,10 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	systemctl set-default multi-user.target
 	systemctl disable cron.service
 	systemctl enable rpcbind
+	systemctl enable haveged
 	systemctl disable shellinabox
+	systemctl disable phpsessionclean.service
+	systemctl disable phpsessionclean.timer
 	systemctl disable hostapd
 	systemctl disable dnsmasq
 	systemctl disable bluetooth.service
@@ -172,6 +176,7 @@ cat <<-EOF > ${USERDATA_PATH}/post.sfx
 	systemctl disable minidlna
 	systemctl disable upmpdcli
 	systemctl disable localui
+	systemctl disable udisks2
 
 	sed -i ' s|init=/root/moode.sfx||' /boot/cmdline.txt
 	
