@@ -7,7 +7,7 @@ LTOENABLE=1
 KERN_LTOENABLE=0
 
 #create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/...
-bootstrap_sysroot development/rpi-kernel-4.19-master development/glibc_2.29
+bootstrap_sysroot development/rpi-kernel-4.19-master development/glibc_2.30
 #setup_gcc
 #setup_rust
 #setup_python
