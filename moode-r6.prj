@@ -57,7 +57,7 @@ build moode/mpc_0.33
 build raspbian/minidlna_1.2.1+dfsg-1
 
 # COMPONENT 2 - Auto-shuffle
-build moode/ashuffle_2.0.1
+build moode/ashuffle_2.0.2
 
 # COMPONENT 3 - MPD Audio Scrobblea
 build moode/mpdas-master
