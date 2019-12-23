@@ -23,8 +23,9 @@ setup_python
 build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build moode/rpi-kernel_4.19.83
-build raspbian/iw_5.3-1
+#build moode/rpi-kernel_4.19.83
+build moode/rpi-kernel_5.4.3
+build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
 build raspbian/wpa_supplicant_2.9-3
 build raspbian/hostapd_2.9-3
