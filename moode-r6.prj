@@ -10,7 +10,7 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20191003-122623-moode-r60-empty-dev.tar.xz
+create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20200114-145315-moode-r60-empty-dev.tar.xz
 setup_gcc
 setup_rust
 setup_python
