@@ -16,7 +16,7 @@ bootstrap_sysroot development/rpi-kernel-4.19-master development/glibc_2.30
 
 #clean_project
 
-build development/rpi-kernel-4.19-master
+build development/rpi-kernel_5.4.19
 
 #install_gcclibs
-#create_selfextracting_archive
+create_sfx_archive remove_devfiles

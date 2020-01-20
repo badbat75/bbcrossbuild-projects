@@ -44,7 +44,7 @@ build moode/bluez-alsa_2.0.0
 build moode/trx_0.4
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.16
+build moode/mpd_0.21.19
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
