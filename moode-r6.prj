@@ -27,8 +27,8 @@ build moode/moode_${MOODEREL}
 build moode/rpi-kernel_5.4.13
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
-build raspbian/wpa_supplicant_2.9-3
-build raspbian/hostapd_2.9-3
+build raspbian/wpa_supplicant_2.9-6
+build raspbian/hostapd_2.9-6
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
