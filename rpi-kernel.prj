@@ -6,10 +6,10 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-bootstrap_sysroot moode/rpi-kernel_5.4.13 development/glibc_2.30
+bootstrap_sysroot moode/rpi-kernel_5.4.16 development/glibc_2.30
 setup_gcc
 
-build moode/rpi-kernel_5.4.13
+build moode/rpi-kernel_5.4.16
 
 #install_gcclibs
 #create_sfx_archive remove_devfiles
