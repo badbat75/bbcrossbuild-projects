@@ -6,7 +6,7 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-bootstrap_sysroot moode/rpi-kernel_5.4.16 development/glibc_2.30
+bootstrap_sysroot moode/rpi-kernel_5.4.16 development/glibc_2.31
 setup_gcc
 
 build moode/rpi-kernel_5.4.16
