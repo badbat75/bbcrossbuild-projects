@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r641
+MOODEREL=r642
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
