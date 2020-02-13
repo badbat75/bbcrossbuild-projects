@@ -33,6 +33,8 @@ build raspbian/hostapd_2.9-6
 # STEP 3 - Install core packages
 build moode/mediainfo_19.09
 
+build moode/alsacap
+
 # USB mounter
 #build raspbian/udisks-glue_1.3.5-1
 build raspbian/udevil_0.4.4-2
