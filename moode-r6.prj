@@ -73,7 +73,7 @@ build moode/librespot_0.1.0
 build moode/squeezelite-master
 
 # COMPONENT 6 - Upmpdcli
-build moode/upmpdcli_1.4.5
+build moode/upmpdcli_1.4.6
 build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
