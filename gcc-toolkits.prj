@@ -6,6 +6,6 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-bootstrap_sysroot linux/kernel_5.4.18 development/glibc_2.31
+bootstrap_sysroot linux/kernel_5.4.21 development/glibc_2.31
 
 #clean_project
