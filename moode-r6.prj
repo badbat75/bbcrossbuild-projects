@@ -23,7 +23,7 @@ setup_python
 build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build linux/rpi-kernel_5.4.18
+build linux/rpi-kernel_5.4.21
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
 build raspbian/wpa_supplicant_2.9-6
@@ -44,7 +44,7 @@ build moode/pi-bluetooth-master
 build moode/bluez-alsa_2.1.0
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.16
+build moode/mpd_0.21.20
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
