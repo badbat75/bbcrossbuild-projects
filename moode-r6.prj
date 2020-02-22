@@ -64,10 +64,10 @@ build moode/ashuffle_2.0.2
 build moode/mpdas-master
 
 # COMPONENT 4A - Shairport-sync
-build moode/shairport-sync_3.3.5
+build moode/shairport-sync_3.3.6
 
 # COMPONENT 4B - Librespot
-build moode/librespot_0.1.0
+build moode/librespot_0.1.1
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite-master
