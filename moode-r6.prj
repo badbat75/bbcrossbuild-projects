@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r642
+MOODEREL=r650
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -23,11 +23,11 @@ setup_python
 build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build linux/rpi-kernel_5.4.21
+build linux/rpi-kernel_5.5.6
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
-build raspbian/wpa_supplicant_2.9-6
-build raspbian/hostapd_2.9-6
+build raspbian/wpa_supplicant_2.9+git20200213+877d9a0-1
+build raspbian/hostapd_2.9+git20200213+877d9a0-1
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
@@ -58,7 +58,7 @@ build moode/mpc_0.33
 build raspbian/minidlna_1.2.1+dfsg-1
 
 # COMPONENT 2 - Auto-shuffle
-build moode/ashuffle_2.0.2
+build moode/ashuffle_2.1.0
 
 # COMPONENT 3 - MPD Audio Scrobblea
 build moode/mpdas-master
