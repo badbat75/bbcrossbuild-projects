@@ -1,6 +1,7 @@
 # Build recipe for moode mediacenter
 
 MOODEREL=r650
+RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -194,8 +195,6 @@ EOF
 
 install_gcclibs
 
-RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
-
 IMGRESIZE=2:3G mount_from https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
@@ -223,7 +222,7 @@ run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 run_on_root_dir temp root "apt-get -y purge --autoremove bluez libbluetooth-dev libbluetooth3 gcc build-essential \
 	aptitude libxapian30 wpasupplicant iw ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
 	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 libboost-system1.67.0 libboost-thread1.67.0"
-#libsoxr
+
 run_on_root_dir temp root "apt-get clean"
 run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/${PRJ_NAME}.sfx|;s| quiet||' /boot/cmdline.txt"
 
