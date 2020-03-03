@@ -194,8 +194,10 @@ EOF
 
 install_gcclibs
 
-IMGRESIZE=2:3G mount_from https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-07/2020-02-05-raspbian-buster-lite.zip \
-	2020-02-05-raspbian-buster-lite.img temp 2:/ 1:/boot
+RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
+
+IMGRESIZE=2:3G mount_from https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/${RASPBIAN_IMAGE}.zip \
+	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
 run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
 run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
@@ -227,6 +229,7 @@ run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr
 
 create_sfx_archive remove_devfiles
 inject_into_root_dir temp sfx_archive /root
+[ -f ~/Desktop/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Desktop/moode/moodecfg.txt /boot || true
 #run_on_root_dir temp root "/mnt/${PRJ_NAME}.sfx"
 
-unmount_dir temp
+unmount_dir --finalize temp
