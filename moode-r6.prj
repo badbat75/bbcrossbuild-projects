@@ -157,6 +157,7 @@ remove_devfiles
 #create_sfx_archive
 inject_into_root_dir temp binaries /
 resume_devfiles
+
 # Run /root/firstboot at first boot, enable verbose boot and set physical boot device
 run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
 # Users and groups
