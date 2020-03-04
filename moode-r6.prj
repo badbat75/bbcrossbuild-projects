@@ -174,7 +174,7 @@ run_on_root_dir temp root "chown www-data:www-data /var/local/php"
 run_on_root_dir temp root "chown -R mpd:audio /var/lib/mpd"
 run_on_root_dir temp root "chown -R mpd:audio /var/log/mpd"
 run_on_root_dir temp root "chown mpd:audio /etc/mpd.conf"
-#run_on_root_dir temp root "chown mpd:audio /run/mpd"
+run_on_root_dir temp root "chown mpd:audio /run/mpd"
 run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
 run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
 # Start-up configuration
@@ -223,6 +223,7 @@ run_on_root_dir temp root "systemctl disable udisks2"
 run_on_root_dir temp root "systemctl disable triggerhappy"
 # Create firstboot script
 run_on_root_dir temp root "cat <<-EOF > /root/firstboot
+	#!/bin/sh
 	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 	date -s "@$(date +%s)"
 	mkdir /dev/pts
