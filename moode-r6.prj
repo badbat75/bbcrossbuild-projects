@@ -119,108 +119,6 @@ build firmwares/broadcom-bt-firmware-master
 #
 # FINAL - Clean up
 
-cat <<-EOF > ${USERDATA_PATH}/pre.sfx
-	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
-	date -s "@$(date +%s)"
-	mkdir /dev/pts
-	mount -t devpts devpts /dev/pts
-	mount -t proc proc /proc
-	mount -t sysfs sys /sys
-	mount -t tmpfs tmp /run
-	mkdir -p /run/systemd
-	mount -oremount,rw /dev/mmcblk0p2 /
-	mount /dev/mmcblk0p1 /boot
-	apt-get -y purge raspberrypi-kernel
-EOF
-cat <<-EOF > ${USERDATA_PATH}/post.sfx
-	# Users and groups
-	useradd -r -M -s /usr/bin/nologin -G audio -c "MediaPlayer Daemon" -d /var/lib/mpd mpd
-	useradd -r -M -s /usr/bin/nologin -G audio -c "AirPlay Daemon" -d /var/lib/shairport-sync shairport-sync
-	useradd -r -M -s /usr/bin/nologin -c "UPnP Media Renderer Client" -d /var/lib/upmpdcli upmpdcli
-	useradd -r -M -s /usr/bin/nologin -c "MiniDLNA server" -d /var/lib/minidlna minidlna
-	echo "pi:moodeaudio" | chpasswd
-
-	# File permissions
-	chown root:plugdev /usr/bin/udevil
-	#chown root:netdev /etc/dhcpcd.conf
-	chown -R pi:pi /home/pi
-	chown www-data:www-data /var/local/php
-	chown -R mpd:audio /var/lib/mpd
-	chown -R mpd:audio /var/log/mpd
-	chown mpd:audio /etc/mpd.conf
-	chown mpd:audio /run/mpd
-	chown minidlna:minidlna /var/cache/minidlna
-	chown minidlna:minidlna /var/lib/minidlna
-
-	# Start-up configuration
-	[ -f /etc/modprobe.d/blacklist-rtl8192cu.conf ] && rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf
-	touch /boot/ssh
-	sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt
-	sed -i 's/raspberrypi/moode/' /etc/hostname
-	sed -i 's/raspberrypi/moode/' /etc/hosts
-	sed -i '/hosts:/ s/$/ wins mdns4/' /etc/nsswitch.conf
-	sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config
-	[ -f /etc/init.d/resize2fs_once ] && rm /etc/init.d/resize2fs_once
-	cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime
-	dphys-swapfile swapoff
-	dphys-swapfile uninstall
-	systemctl disable dphys-swapfile
-	[ -d /var/www/html ] && rm -r /var/www/html
-	[ -f /etc/update-motd.d/10-uname ] && rm /etc/update-motd.d/10-uname
-	#rm /var/lib/dhcpcd5/*
-
-	# Moode configuration
-	sqlite3 /var/local/www/db/moode-sqlite3.db "CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;"
-	sqlite3 /var/local/www/db/moode-sqlite3.db "update cfg_system set value='Emerald' where param='accent_color'"
-	sqlite3 /var/local/www/db/moode-sqlite3.db "update cfg_system set value='Default' where param='themename'"
-
-	# AlsaEqual
-	[ -f /usr/share/alsa/alsa.conf.d/equal.conf ] && rm /usr/share/alsa/alsa.conf.d/equal.conf
-	amixer -D alsaequal > /dev/null
-	chmod 0755 /usr/local/bin/alsaequal.bin
-	chown mpd:audio /usr/local/bin/alsaequal.bin
-
-	# MPD configuration
-	#su - mpd -c "/usr/bin/mpd /etc/mpd.conf"
-	#su - mpd -c "/usr/bin/mpc enable only 1"
-	#su - mpd -c "/usr/bin/mpc update"
-	#su - mpd -c "/usr/bin/mpd --kill /etc/mpd.conf"
-
-	# Start-up services
-	#systemctl daemon-reload
-	systemctl set-default multi-user.target
-	systemctl disable cron.service
-	systemctl enable rpcbind
-	systemctl enable haveged
-	systemctl disable shellinabox
-	systemctl disable phpsessionclean.service
-	systemctl disable phpsessionclean.timer
-	systemctl disable hostapd
-	systemctl disable dnsmasq
-	systemctl disable bluetooth.service
-	systemctl disable hciuart.service
-	systemctl disable bluealsa
-	systemctl disable mpd.service
-	systemctl disable mpd.socket
-	systemctl disable rotenc.service
-	systemctl disable squeezelite
-	systemctl disable upmpdcli.service
-	systemctl disable minidlna
-	systemctl disable upmpdcli
-	systemctl disable localui
-	systemctl disable udisks2
-	systemctl disable triggerhappy
-
-	sed -i ' s|init=/root/${PRJ_NAME}.sfx||' /boot/cmdline.txt
-
-	umount /boot
-	mount -oremount,ro /dev/mmcblk0p2 /
-
-	sleep 20
-	echo b > /proc/sysrq-trigger
-	exit 0
-EOF
-
 install_gcclibs
 
 unmount_dir distos
@@ -249,16 +147,118 @@ run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
 	\
 	python3 python3-dbus"
-run_on_root_dir temp root "apt-get -y purge --autoremove bluez libbluetooth-dev libbluetooth3 gcc-8 build-essential \
+run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential \
+	raspberrypi-kernel bluez libbluetooth-dev libbluetooth3 \
 	aptitude libxapian30 wpasupplicant iw ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
 	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 libboost-system1.67.0 libboost-thread1.67.0"
-
 run_on_root_dir temp root "apt-get clean"
-run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/${PRJ_NAME}.sfx|;s| quiet||' /boot/cmdline.txt"
 
-create_sfx_archive remove_devfiles
-inject_into_root_dir temp sfx_archive /root
+remove_devfiles
+#create_sfx_archive
+inject_into_root_dir temp binaries /
+resume_devfiles
+# Run /root/firstboot at first boot, enable verbose boot and set physical boot device
+run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
+# Users and groups
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'MediaPlayer Daemon' -d /var/lib/mpd mpd"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'AirPlay Daemon' -d /var/lib/shairport-sync shairport-sync"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'UPnP Media Renderer Client' -d /var/lib/upmpdcli upmpdcli"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'MiniDLNA server' -d /var/lib/minidlna minidlna"
+run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
+# File permissions
+run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
+#run_on_root_dir temp root "chown root:netdev /etc/dhcpcd.conf"
+run_on_root_dir temp root "chown -R pi:pi /home/pi"
+run_on_root_dir temp root "chown www-data:www-data /var/local/php"
+run_on_root_dir temp root "chown -R mpd:audio /var/lib/mpd"
+run_on_root_dir temp root "chown -R mpd:audio /var/log/mpd"
+run_on_root_dir temp root "chown mpd:audio /etc/mpd.conf"
+#run_on_root_dir temp root "chown mpd:audio /run/mpd"
+run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
+run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
+# Start-up configuration
+#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf"
+run_on_root_dir temp root "touch /boot/ssh"
+run_on_root_dir temp root "sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt"
+run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hostname"
+run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hosts"
+run_on_root_dir temp root "sed -i '/hosts:/ s/$/ wins mdns4/' /etc/nsswitch.conf"
+run_on_root_dir temp root "sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config"
+run_on_root_dir temp root "[ -f /etc/init.d/resize2fs_once ] && rm /etc/init.d/resize2fs_once"
+run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
+run_on_root_dir temp root "dphys-swapfile swapoff"
+run_on_root_dir temp root "dphys-swapfile uninstall"
+run_on_root_dir temp root "systemctl disable dphys-swapfile"
+run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html"
+run_on_root_dir temp root "[ -f /etc/update-motd.d/10-uname ] && rm /etc/update-motd.d/10-uname"
+#run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
+# Moode configuration
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Emerald' where param='accent_color'\""
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Default' where param='themename'\""
+# Start-up services
+#run_on_root_dir temp root "systemctl daemon-reload"
+run_on_root_dir temp root "systemctl set-default multi-user.target"
+run_on_root_dir temp root "systemctl disable cron.service"
+run_on_root_dir temp root "systemctl enable rpcbind"
+run_on_root_dir temp root "systemctl enable haveged"
+run_on_root_dir temp root "systemctl disable shellinabox"
+run_on_root_dir temp root "systemctl disable phpsessionclean.service"
+run_on_root_dir temp root "systemctl disable phpsessionclean.timer"
+run_on_root_dir temp root "systemctl disable hostapd"
+run_on_root_dir temp root "systemctl disable dnsmasq"
+run_on_root_dir temp root "systemctl disable bluetooth.service"
+run_on_root_dir temp root "systemctl disable hciuart.service"
+run_on_root_dir temp root "systemctl disable bluealsa"
+run_on_root_dir temp root "systemctl disable mpd.service"
+run_on_root_dir temp root "systemctl disable mpd.socket"
+run_on_root_dir temp root "systemctl disable rotenc.service"
+run_on_root_dir temp root "systemctl disable squeezelite"
+run_on_root_dir temp root "systemctl disable upmpdcli.service"
+run_on_root_dir temp root "systemctl disable minidlna"
+run_on_root_dir temp root "systemctl disable upmpdcli"
+run_on_root_dir temp root "systemctl disable localui"
+run_on_root_dir temp root "systemctl disable udisks2"
+run_on_root_dir temp root "systemctl disable triggerhappy"
+# Create firstboot script
+run_on_root_dir temp root "cat <<-EOF > /root/firstboot
+	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+	date -s "@$(date +%s)"
+	mkdir /dev/pts
+	mount -t devpts devpts /dev/pts
+	mount -t proc proc /proc
+	mount -t sysfs sys /sys
+	mount -t tmpfs tmp /run
+	mkdir -p /run/systemd
+	mount -oremount,rw /dev/mmcblk0p2 /
+	mount /dev/mmcblk0p1 /boot
+
+	# AlsaEqual
+	rm /usr/share/alsa/alsa.conf.d/equal.conf
+	amixer -D alsaequal
+	chmod 0755 /usr/local/bin/alsaequal.bin
+	chown mpd:audio /usr/local/bin/alsaequal.bin
+
+	# MPD configuration
+	#su - mpd -c \"/usr/bin/mpd /etc/mpd.conf\"
+	#su - mpd -c \"/usr/bin/mpc enable only 1\"
+	#su - mpd -c \"/usr/bin/mpc update\"
+	#su - mpd -c \"/usr/bin/mpd --kill /etc/mpd.conf\"
+
+	#revert to normal boot
+	sed -i ' s|init=/root/firstboot||' /boot/cmdline.txt
+
+	umount /boot
+	mount -oremount,ro /dev/mmcblk0p2 /
+
+	sleep 10
+	echo b > /proc/sysrq-trigger
+	exit 0
+EOF"
+run_on_root_dir temp root "chmod +x /root/firstboot"
+
 [ -f ~/Desktop/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Desktop/moode/moodecfg.txt /boot || true
-#run_on_root_dir temp root "/mnt/${PRJ_NAME}.sfx"
+
+read -p "Press [Enter] key to carry on..."
 
 unmount_dir --finalize temp
