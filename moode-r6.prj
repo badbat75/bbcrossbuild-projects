@@ -2,6 +2,7 @@
 
 MOODEREL=r650
 RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
+RASPBIAN_URL=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -11,7 +12,34 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20200209-163629-moode-r60-empty-dev.tar.xz
+IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
+	${RASPBIAN_IMAGE}.img distos 2:/ 1:/boot
+run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+	libc6-dev libpython3-dev libsqlite3-dev \
+	libortp-dev libasound2-dev \
+	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
+	libbsd-dev libncurses5-dev libsndfile1-dev libdaemon-dev \
+	\
+	libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libasound2-dev libshout3-dev libyajl-dev libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+	\
+	libasound2-dev libpopt-dev libavahi-client-dev libssl-dev \
+	libexpat1-dev libxml2-dev libxslt1-dev \
+	libjpeg62-turbo-dev \
+	\
+	libpython3-dev swig \
+	\
+	zlib1g-dev libbz2-dev liblzma-dev"
+run_on_root_dir distos root "apt-get -y purge --autoremove \
+	bluez libbluetooth-dev libbluetooth3 hostapd wpasupplicant iw \
+	aptitude libxapian30 ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
+	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 \
+	libboost-system1.67.0 libboost-thread1.67.0"
+run_on_root_dir distos root "apt-get clean"
+prepare_sysroot
+
+#create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20200209-163629-moode-r60-empty-dev.tar.xz
 setup_gcc
 setup_rust
 setup_python
@@ -195,7 +223,7 @@ EOF
 
 install_gcclibs
 
-IMGRESIZE=2:3G mount_from https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/${RASPBIAN_IMAGE}.zip \
+IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
 run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
