@@ -223,6 +223,8 @@ EOF
 
 install_gcclibs
 
+unmount_dir distos
+
 IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
