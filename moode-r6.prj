@@ -259,6 +259,7 @@ run_on_root_dir temp root "chmod +x /root/firstboot"
 
 [ -f ~/Desktop/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Desktop/moode/moodecfg.txt /boot || true
 
-read -p "Press [Enter] key to carry on..."
+# Uncomment it to navigate in the temp filesystem
+#read -p "Press [Enter] key to carry on..."
 
 unmount_dir --finalize temp
