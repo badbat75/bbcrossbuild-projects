@@ -15,7 +15,7 @@ KERN_LTOENABLE=0
 IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img distos 2:/ 1:/boot
 run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	libc6-dev libpython3-dev libsqlite3-dev \
 	libortp-dev libasound2-dev \
@@ -52,7 +52,7 @@ setup_python
 build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build linux/rpi-kernel_5.5.6
+build linux/rpi-kernel_4.19.106
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
 build raspbian/wpa_supplicant_2.9.0-8
@@ -127,7 +127,7 @@ IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
 run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
 run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	php-fpm nginx sqlite3 php-sqlite3 php7.3-gd \
 	bs2b-ladspa libbs2b0 libasound2-plugin-equal \
@@ -155,16 +155,16 @@ run_on_root_dir temp root "apt-get clean"
 
 remove_devfiles
 #create_sfx_archive
-inject_into_root_dir temp binaries /
+inject_into_root_dir temp binaries
 resume_devfiles
 
 # Run /root/firstboot at first boot, enable verbose boot and set physical boot device
 run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
 # Users and groups
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'MediaPlayer Daemon' -d /var/lib/mpd mpd"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'AirPlay Daemon' -d /var/lib/shairport-sync shairport-sync"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'UPnP Media Renderer Client' -d /var/lib/upmpdcli upmpdcli"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'MiniDLNA server' -d /var/lib/minidlna minidlna"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'MediaPlayer Daemon' -d /var/lib/mpd mpd || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'AirPlay Daemon' -d /var/lib/shairport-sync shairport-sync || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'UPnP Media Renderer Client' -d /var/lib/upmpdcli upmpdcli || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'MiniDLNA server' -d /var/lib/minidlna minidlna || true"
 run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
 # File permissions
 run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
@@ -178,25 +178,25 @@ run_on_root_dir temp root "chown mpd:audio /run/mpd"
 run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
 run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
 # Start-up configuration
-#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf"
+#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf || true"
 run_on_root_dir temp root "touch /boot/ssh"
 run_on_root_dir temp root "sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt"
 run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hostname"
 run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hosts"
 run_on_root_dir temp root "sed -i '/hosts:/ s/$/ wins mdns4/' /etc/nsswitch.conf"
 run_on_root_dir temp root "sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config"
-run_on_root_dir temp root "[ -f /etc/init.d/resize2fs_once ] && rm /etc/init.d/resize2fs_once"
+run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
 run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
 run_on_root_dir temp root "dphys-swapfile swapoff"
 run_on_root_dir temp root "dphys-swapfile uninstall"
 run_on_root_dir temp root "systemctl disable dphys-swapfile"
-run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html"
-run_on_root_dir temp root "[ -f /etc/update-motd.d/10-uname ] && rm /etc/update-motd.d/10-uname"
+run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
+run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
 #run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
 # Moode configuration
 run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
 run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Emerald' where param='accent_color'\""
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Default' where param='themename'\""
+#run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Default' where param='themename'\""
 # Start-up services
 #run_on_root_dir temp root "systemctl daemon-reload"
 run_on_root_dir temp root "systemctl set-default multi-user.target"
