@@ -153,10 +153,8 @@ run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential \
 	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 libboost-system1.67.0 libboost-thread1.67.0"
 run_on_root_dir temp root "apt-get clean"
 
-remove_devfiles
-#create_sfx_archive
-inject_into_root_dir temp binaries
-resume_devfiles
+#create_sfx_archive remove_devfiles
+inject_into_root_dir --remove_devfiles temp binaries
 
 # Run /root/firstboot at first boot, enable verbose boot and set physical boot device
 run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
