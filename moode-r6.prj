@@ -15,7 +15,7 @@ KERN_LTOENABLE=0
 IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img distos 2:/ 1:/boot
 run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	libc6-dev libpython3-dev libsqlite3-dev \
 	libortp-dev libasound2-dev \
@@ -127,7 +127,7 @@ IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
 	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
 
 run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y upgrade"
+run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	php-fpm nginx sqlite3 php-sqlite3 php7.3-gd \
 	bs2b-ladspa libbs2b0 libasound2-plugin-equal \
