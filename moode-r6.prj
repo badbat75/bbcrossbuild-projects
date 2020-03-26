@@ -73,7 +73,7 @@ build moode/pi-bluetooth-master
 build moode/bluez-alsa_2.1.0
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.20
+build moode/mpd_0.21.21
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
