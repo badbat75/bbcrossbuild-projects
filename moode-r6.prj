@@ -103,7 +103,7 @@ build moode/squeezelite-master
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.4.7
-build moode/libupnppsamples-master  
+#build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
 build python/gmusicapi_12.1.1
