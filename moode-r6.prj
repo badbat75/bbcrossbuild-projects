@@ -52,7 +52,7 @@ setup_python
 build moode/moode_${MOODEREL}
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build linux/rpi-kernel_5.5.11
+build linux/rpi-kernel_5.5.14
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
 build raspbian/wpa_supplicant_2.9.0-11
@@ -70,7 +70,7 @@ build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/pi-bluetooth-master
-build moode/bluez-alsa_2.1.0
+build moode/bluez-alsa-a2dp-volume_2.1.0
 
 # STEP 6 - Compile and install MPD
 build moode/mpd_0.21.21
