@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r642
+MOODEREL=r650
 RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
 RASPBIAN_URL=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/
 
@@ -55,8 +55,8 @@ build moode/moode_${MOODEREL}
 build linux/rpi-kernel_5.6.2
 build raspbian/iw_5.4-1
 build moode/wireless-regdb_651e39de
-build raspbian/wpa_supplicant_2.9.0-11
-build raspbian/hostapd_2.9.0-11
+build raspbian/wpa_supplicant_2.9.0-12
+build raspbian/hostapd_2.9.0-12
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
@@ -73,7 +73,7 @@ build moode/pi-bluetooth-master
 build moode/bluez-alsa-a2dp-volume_2.1.0
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.21
+build moode/mpd_0.21.22
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
@@ -103,7 +103,7 @@ build moode/squeezelite-master
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.4.7
-#build moode/libupnppsamples-master  
+build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
 build python/gmusicapi_12.1.1
