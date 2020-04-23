@@ -227,6 +227,9 @@ run_on_root_dir temp root "systemctl disable upmpdcli"
 run_on_root_dir temp root "systemctl disable localui"
 run_on_root_dir temp root "systemctl disable udisks2"
 run_on_root_dir temp root "systemctl disable triggerhappy"
+# Replace standard mpd binaries
+run_on_root_dir temp root "cp -f /usr/bin/mpd /var/www/inc/mpd-0.21.22"
+
 # Create firstboot script
 run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 	#!/bin/sh
