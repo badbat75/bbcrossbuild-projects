@@ -268,7 +268,7 @@ run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 EOF"
 run_on_root_dir temp root "chmod +x /root/firstboot"
 
-[ -f ~/Desktop/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Desktop/moode/moodecfg.txt /boot || true
+[ -f ~/Git/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Git/moode/moodecfg.txt /boot || true
 
 # Uncomment it to navigate in the temp filesystem
 #read -p "Press [Enter] key to carry on..."
