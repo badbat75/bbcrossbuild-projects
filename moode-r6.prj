@@ -31,11 +31,7 @@ run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	libpython3-dev swig \
 	\
 	zlib1g-dev libbz2-dev liblzma-dev"
-run_on_root_dir distos root "apt-get -y purge --autoremove \
-	bluez libbluetooth-dev libbluetooth3 hostapd wpasupplicant iw \
-	aptitude libxapian30 ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
-	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 \
-	libboost-system1.67.0 libboost-thread1.67.0"
+run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
 run_on_root_dir distos root "apt-get clean"
 prepare_sysroot
 
