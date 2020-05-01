@@ -1,0 +1,272 @@
+# Build recipe for moode mediacenter
+
+MOODEREL=r651
+RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
+RASPBIAN_URL=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/
+
+## Enable shared libraries (default) but disable static ones
+BUILD_LIBSHARED=1
+BUILD_LIBSTATIC=0
+
+## Enable LTO both for kernel and applications
+LTOENABLE=1
+KERN_LTOENABLE=0
+
+IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
+	${RASPBIAN_IMAGE}.img distos 2:/ 1:/boot
+run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+	libc6-dev libpython3-dev libsqlite3-dev \
+	libortp-dev libasound2-dev \
+	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
+	libbsd-dev libncurses5-dev libsndfile1-dev libdaemon-dev \
+	\
+	libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libasound2-dev libshout3-dev libyajl-dev libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+	\
+	libasound2-dev libpopt-dev libavahi-client-dev libssl-dev \
+	libexpat1-dev libxml2-dev libxslt1-dev \
+	libjpeg62-turbo-dev \
+	\
+	libpython3-dev swig \
+	\
+	zlib1g-dev libbz2-dev liblzma-dev"
+run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
+run_on_root_dir distos root "apt-get clean"
+prepare_sysroot
+
+#create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20200209-163629-moode-r60-empty-dev.tar.xz
+setup_gcc
+setup_rust
+setup_python
+
+#create_key_sscertificate
+
+#clean_project
+
+# Download moode-sources
+build moode/moode_${MOODEREL}
+
+# STEP 1 - Modify Raspbian Lite and create a new, base image
+build linux/rpi-kernel_5.6.7
+build raspbian/iw_5.4-1
+build moode/wireless-regdb_651e39de
+build raspbian/wpa_supplicant_2.9.0-12
+build raspbian/hostapd_2.9.0-12
+
+# STEP 2 - Expand the root partition to 3GB
+# STEP 3 - Install core packages
+build moode/mediainfo_19.09
+
+build moode/alsacap
+
+# USB mounter
+#build raspbian/udisks-glue_1.3.5-1
+build raspbian/udevil_0.4.4-2
+
+# STEP 4 - Install enhanced networking and bluetooth stack
+build moode/pi-bluetooth-master
+build moode/bluez-alsa_2.1.0
+
+# STEP 6 - Compile and install MPD
+build moode/mpd_0.21.23
+build moode/mpc_0.33
+
+# STEP 7 - Create moOde runtime environment
+# STEP 8 - Install moOde sources and configs
+# STEP 9 - Alsaequal
+# STEP 10 - Optionally squash /var/www
+# STEP 12 - Launch and configure moOde!
+# STEP 13 - Final prep for image
+
+# COMPONENT 1 - MiniDLNA
+build raspbian/minidlna_1.2.1+dfsg-1
+
+# COMPONENT 2 - Auto-shuffle
+build moode/ashuffle_2.1.0
+
+# COMPONENT 3 - MPD Audio Scrobblea
+build moode/mpdas-master
+
+# COMPONENT 4A - Shairport-sync
+build moode/shairport-sync_3.3.6
+
+# COMPONENT 4B - Librespot
+build moode/librespot_0.1.1
+
+# COMPONENT 5 - Squeezelite
+build moode/squeezelite-master
+
+# COMPONENT 6 - Upmpdcli
+build moode/upmpdcli_1.4.7
+#build moode/libupnppsamples-master  
+
+# COMPONENT 7 - Optionally install gmusicapi
+build python/gmusicapi_12.1.1
+
+# COMPONENT 8 - Local UI display
+
+# COMPONENT 9 - Allo Piano 2.1 Firmware
+build firmwares/allo-piano-firmware-master
+
+# COMPONENT 10 - Broadcom Bluetooth devices firmwares
+build firmwares/broadcom-bt-firmware-master
+
+#
+# FINAL - Clean up
+
+install_gcclibs
+
+unmount_dir distos
+
+IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
+	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
+
+run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
+run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+	php-fpm nginx sqlite3 php-sqlite3 php7.3-gd \
+	bs2b-ladspa libbs2b0 libasound2-plugin-equal \
+	\
+	telnet sysstat squashfs-tools shellinabox \
+	samba smbclient ntfs-3g exfat-fuse xfsprogs inotify-tools ffmpeg \
+	avahi-utils winbind libnss-winbind djmount haveged \
+	udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
+	\
+	libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
+	\
+	dnsmasq \
+	\
+	expect \
+	\
+	libopusfile0 \
+	xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
+	\
+	python3 python3-dbus"
+run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential \
+	raspberrypi-kernel bluez libbluetooth-dev libbluetooth3 \
+	aptitude libxapian30 wpasupplicant iw ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
+	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 libboost-system1.67.0 libboost-thread1.67.0"
+run_on_root_dir temp root "apt-get clean"
+
+#create_sfx_archive remove_devfiles
+inject_into_root_dir --remove_devfiles temp binaries
+
+# Run /root/firstboot at first boot, enable verbose boot and set physical boot device
+run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
+# Users and groups
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'MediaPlayer Daemon' -d /var/lib/mpd mpd || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'AirPlay Daemon' -d /var/lib/shairport-sync shairport-sync || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'UPnP Media Renderer Client' -d /var/lib/upmpdcli upmpdcli || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'MiniDLNA server' -d /var/lib/minidlna minidlna || true"
+run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
+# File permissions
+run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
+#run_on_root_dir temp root "chown root:netdev /etc/dhcpcd.conf"
+run_on_root_dir temp root "chown -R pi:pi /home/pi"
+run_on_root_dir temp root "chown www-data:www-data /var/local/php"
+run_on_root_dir temp root "chown -R mpd:audio /var/lib/mpd"
+run_on_root_dir temp root "chown -R mpd:audio /var/log/mpd"
+run_on_root_dir temp root "chown mpd:audio /etc/mpd.conf"
+run_on_root_dir temp root "chown mpd:audio /run/mpd"
+run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
+run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
+# Start-up configuration
+#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf || true"
+run_on_root_dir temp root "touch /boot/ssh"
+run_on_root_dir temp root "sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt"
+run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hostname"
+run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hosts"
+run_on_root_dir temp root "sed -i '/hosts:/ s/$/ wins mdns4/' /etc/nsswitch.conf"
+run_on_root_dir temp root "sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config"
+run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
+run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
+run_on_root_dir temp root "dphys-swapfile swapoff"
+run_on_root_dir temp root "dphys-swapfile uninstall"
+run_on_root_dir temp root "systemctl disable dphys-swapfile"
+run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
+run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
+#run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
+# Moode configuration
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Emerald' where param='accent_color'\""
+## moode_db for beta r650
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set param='extra_tags', value='track,disc,date,composer,encoded' where param='xtagdisp'\""
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"insert into cfg_system (param,value) values ('appearance_modal_state','1,1,1,0'),('font_size','Normal'),('volume_step_limit','10'),('volume_mpd_max','100')\""
+# Start-up services
+#run_on_root_dir temp root "systemctl daemon-reload"
+run_on_root_dir temp root "systemctl set-default multi-user.target"
+run_on_root_dir temp root "systemctl disable cron.service"
+run_on_root_dir temp root "systemctl enable rpcbind"
+run_on_root_dir temp root "systemctl stop apt-daily.timer"
+run_on_root_dir temp root "systemctl disable apt-daily.timer"
+run_on_root_dir temp root "systemctl mask apt-daily.timer"
+run_on_root_dir temp root "systemctl stop apt-daily-upgrade.timer"
+run_on_root_dir temp root "systemctl disable apt-daily-upgrade.timer"
+run_on_root_dir temp root "systemctl mask apt-daily-upgrade.timer"
+run_on_root_dir temp root "systemctl enable haveged"
+run_on_root_dir temp root "systemctl disable shellinabox"
+run_on_root_dir temp root "systemctl disable phpsessionclean.service"
+run_on_root_dir temp root "systemctl disable phpsessionclean.timer"
+run_on_root_dir temp root "systemctl disable hostapd"
+run_on_root_dir temp root "systemctl disable dnsmasq"
+run_on_root_dir temp root "systemctl disable bluetooth.service"
+run_on_root_dir temp root "systemctl disable hciuart.service"
+run_on_root_dir temp root "systemctl disable bluealsa"
+run_on_root_dir temp root "systemctl disable mpd.service"
+run_on_root_dir temp root "systemctl disable mpd.socket"
+run_on_root_dir temp root "systemctl disable rotenc.service"
+run_on_root_dir temp root "systemctl disable squeezelite"
+run_on_root_dir temp root "systemctl disable upmpdcli.service"
+run_on_root_dir temp root "systemctl disable minidlna"
+run_on_root_dir temp root "systemctl disable upmpdcli"
+run_on_root_dir temp root "systemctl disable localui"
+run_on_root_dir temp root "systemctl disable udisks2"
+run_on_root_dir temp root "systemctl disable triggerhappy"
+# Replace standard mpd binaries
+run_on_root_dir temp root "cp -f /usr/bin/mpd /var/www/inc/mpd-0.21.22"
+
+# Create firstboot script
+run_on_root_dir temp root "cat <<-EOF > /root/firstboot
+	#!/bin/sh
+	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+	date -s "@$(date +%s)"
+	mkdir /dev/pts
+	mount -t devpts devpts /dev/pts
+	mount -t proc proc /proc
+	mount -t sysfs sys /sys
+	mount -t tmpfs tmp /run
+	mkdir -p /run/systemd
+	mount -oremount,rw /dev/mmcblk0p2 /
+	mount /dev/mmcblk0p1 /boot
+
+	# AlsaEqual
+	rm /usr/share/alsa/alsa.conf.d/equal.conf
+	amixer -D alsaequal
+	chmod 0755 /usr/local/bin/alsaequal.bin
+	chown mpd:audio /usr/local/bin/alsaequal.bin
+
+	# MPD configuration
+	#su - mpd -c \"/usr/bin/mpd /etc/mpd.conf\"
+	#su - mpd -c \"/usr/bin/mpc enable only 1\"
+	#su - mpd -c \"/usr/bin/mpc update\"
+	#su - mpd -c \"/usr/bin/mpd --kill /etc/mpd.conf\"
+
+	#revert to normal boot
+	sed -i ' s|init=/root/firstboot||' /boot/cmdline.txt
+
+	umount /boot
+	mount -oremount,ro /dev/mmcblk0p2 /
+
+	sleep 10
+	echo b > /proc/sysrq-trigger
+	exit 0
+EOF"
+run_on_root_dir temp root "chmod +x /root/firstboot"
+
+[ -f ~/Git/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Git/moode/moodecfg.txt /boot || true
+
+# Uncomment it to navigate in the temp filesystem
+#read -p "Press [Enter] key to carry on..."
+
+unmount_dir --finalize temp
