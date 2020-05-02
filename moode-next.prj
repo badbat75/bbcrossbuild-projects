@@ -1,6 +1,6 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r651
+MOODEREL=r652
 RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
 RASPBIAN_URL=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/
 
@@ -80,7 +80,7 @@ build moode/mpc_0.33
 # STEP 13 - Final prep for image
 
 # COMPONENT 1 - MiniDLNA
-build raspbian/minidlna_1.2.1+dfsg-1
+build moode/minidlna_1.2.1+git076371
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle_2.1.0
