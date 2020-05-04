@@ -99,7 +99,7 @@ build moode/squeezelite-master
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.4.7
-build moode/libupnppsamples-master  
+#build moode/libupnppsamples-master  
 
 # COMPONENT 7 - Optionally install gmusicapi
 build python/gmusicapi_12.1.1
@@ -188,11 +188,15 @@ run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
 run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
 #run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
 # Moode configuration
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
 run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Emerald' where param='accent_color'\""
-## moode_db for beta r650
+## moode_db for r650
 run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set param='extra_tags', value='track,disc,date,composer,encoded' where param='xtagdisp'\""
 run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"insert into cfg_system (param,value) values ('appearance_modal_state','1,1,1,0'),('font_size','Normal'),('volume_step_limit','10'),('volume_mpd_max','100')\""
+##
+## moode_db configuration customization
+#run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_hash set value='$(md5sum ${BIN_PATH}/etc/nginx/nginx.conf)' where param='/etc/nginx/nginx.conf'\""
+##
+run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
 # Start-up services
 #run_on_root_dir temp root "systemctl daemon-reload"
 run_on_root_dir temp root "systemctl set-default multi-user.target"
