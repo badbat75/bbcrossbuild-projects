@@ -1,8 +1,9 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r652
-RASPBIAN_IMAGE=2020-02-13-raspbian-buster-lite
-RASPBIAN_URL=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/
+MOODEREL=r671
+#MOODEDEVCOMMIT=20341fb7ba48206b3bc57cbe0447f1ba5b04f457
+RASPBIAN_IMAGE=2020-05-27-raspios-buster-lite-armhf
+RASPBIAN_URL=http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-05-28/
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -20,9 +21,9 @@ run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	libc6-dev libpython3-dev libsqlite3-dev \
 	libortp-dev libasound2-dev \
 	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
-	libbsd-dev libncurses5-dev libsndfile1-dev libdaemon-dev \
+	libbsd-dev libncurses5-dev libsndfile1-dev \
 	\
-	libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libasound2-dev libshout3-dev libyajl-dev libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libasound2-dev libshout3-dev libyajl-dev libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
 	\
 	libasound2-dev libpopt-dev libavahi-client-dev libssl-dev \
 	libexpat1-dev libxml2-dev libxslt1-dev \
@@ -35,7 +36,7 @@ run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant i
 run_on_root_dir distos root "apt-get clean"
 prepare_sysroot
 
-#create_sysroot http://bbb-build-artifacts.s3-eu-west-1.amazonaws.com/moode/20200209-163629-moode-r60-empty-dev.tar.xz
+#create_sysroot http://<url>/<rootfs.tar.gz>
 setup_gcc
 setup_rust
 setup_python
@@ -44,19 +45,20 @@ setup_python
 
 #clean_project
 
-# Download moode-sources
-build moode/moode_${MOODEREL}
+build linux/rpi-kernel_5.7.9
+
+# Download and install moode-sources and pre-build environment
+build moode/moode-dynamic-ver_1.0
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
-build linux/rpi-kernel_5.6.7
 build raspbian/iw_5.4-1
-build moode/wireless-regdb_651e39de
-build raspbian/wpa_supplicant_2.9.0-12
-build raspbian/hostapd_2.9.0-12
+build moode/wireless-regdb_2020-04-29
+build raspbian/wpa_supplicant_2.9.0-13
+build raspbian/hostapd_2.9.0-13
 
 # STEP 2 - Expand the root partition to 3GB
 # STEP 3 - Install core packages
-build moode/mediainfo_19.09
+build moode/mediainfo_20.03
 
 build moode/alsacap
 
@@ -65,11 +67,11 @@ build moode/alsacap
 build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/pi-bluetooth-master
-build moode/bluez-alsa_2.1.0
+build moode/pi-bluetooth_0.1.13
+build moode/bluez-alsa_2.1.0+e5acb73
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.23
+# Already built as dependency for moode-dynamic-ver # build moode/mpd_0.21.23
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
@@ -83,26 +85,26 @@ build moode/mpc_0.33
 build moode/minidlna_1.2.1+git076371
 
 # COMPONENT 2 - Auto-shuffle
-build moode/ashuffle_2.1.0
+build moode/ashuffle_3.7.2
 
 # COMPONENT 3 - MPD Audio Scrobblea
-build moode/mpdas-master
+build moode/mpdas_0.4.5+c81c480
 
 # COMPONENT 4A - Shairport-sync
-build moode/shairport-sync_3.3.6
+build moode/shairport-sync_3.3.7rc1
 
 # COMPONENT 4B - Librespot
-build moode/librespot_0.1.1
+build moode/librespot_0.1.2
 
 # COMPONENT 5 - Squeezelite
-build moode/squeezelite-master
+build moode/squeezelite_master+59fea82
 
 # COMPONENT 6 - Upmpdcli
-build moode/upmpdcli_1.4.7
-#build moode/libupnppsamples-master  
+build moode/upmpdcli_1.4.12+ee59f03
+build moode/libupnppsamples_master+2a6e7a
 
 # COMPONENT 7 - Optionally install gmusicapi
-build python/gmusicapi_12.1.1
+build python/gmusicapi_13.0.0
 
 # COMPONENT 8 - Local UI display
 
@@ -129,8 +131,8 @@ run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	bs2b-ladspa libbs2b0 libasound2-plugin-equal \
 	\
 	telnet sysstat squashfs-tools shellinabox \
-	samba smbclient ntfs-3g exfat-fuse xfsprogs inotify-tools ffmpeg \
-	avahi-utils winbind libnss-winbind djmount haveged \
+	samba smbclient ntfs-3g exfat-fuse inotify-tools ffmpeg \
+	avahi-utils winbind libnss-winbind djmount haveged xfsprogs triggerhappy zip id3v2\
 	udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
 	\
 	libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
@@ -143,9 +145,8 @@ run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
 	\
 	python3 python3-dbus"
-run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential \
-	raspberrypi-kernel bluez libbluetooth-dev libbluetooth3 \
-	aptitude libxapian30 wpasupplicant iw ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
+run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential raspberrypi-kernel bluez \
+	wpasupplicant iw ibverbs-providers libcephfs2 libibverbs1 libnl-3-200 libnl-route-3-200 librados2 \
 	libboost-atomic1.67.0 libboost-iostreams1.58.0 libboost-iostreams1.67.0 libboost-regex1.67.0 libboost-system1.67.0 libboost-thread1.67.0"
 run_on_root_dir temp root "apt-get clean"
 
@@ -186,13 +187,8 @@ run_on_root_dir temp root "dphys-swapfile uninstall"
 run_on_root_dir temp root "systemctl disable dphys-swapfile"
 run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
 run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
+run_on_root_dir temp root "sudo rm /etc/motd || true"
 #run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
-# Moode configuration
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"CREATE TRIGGER ro_columns BEFORE UPDATE OF param, value, [action] ON cfg_hash FOR EACH ROW BEGIN SELECT RAISE(ABORT, 'read only'); END;\""
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set value='Emerald' where param='accent_color'\""
-## moode_db for beta r650
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"update cfg_system set param='extra_tags', value='track,disc,date,composer,encoded' where param='xtagdisp'\""
-run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"insert into cfg_system (param,value) values ('appearance_modal_state','1,1,1,0'),('font_size','Normal'),('volume_step_limit','10'),('volume_mpd_max','100')\""
 # Start-up services
 #run_on_root_dir temp root "systemctl daemon-reload"
 run_on_root_dir temp root "systemctl set-default multi-user.target"
@@ -223,8 +219,10 @@ run_on_root_dir temp root "systemctl disable upmpdcli"
 run_on_root_dir temp root "systemctl disable localui"
 run_on_root_dir temp root "systemctl disable udisks2"
 run_on_root_dir temp root "systemctl disable triggerhappy"
-# Replace standard mpd binaries
-run_on_root_dir temp root "cp -f /usr/bin/mpd /var/www/inc/mpd-0.21.22"
+## Customizations
+# Moode DB customizations
+#run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"
+#\""
 
 # Create firstboot script
 run_on_root_dir temp root "cat <<-EOF > /root/firstboot
@@ -264,7 +262,7 @@ run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 EOF"
 run_on_root_dir temp root "chmod +x /root/firstboot"
 
-[ -f ~/Git/moode/moodecfg.txt ] && inject_into_root_dir temp ~/Git/moode/moodecfg.txt /boot || true
+[ -f ~/moodecfg.txt ] && inject_into_root_dir temp ~/moodecfg.txt /boot || true
 
 # Uncomment it to navigate in the temp filesystem
 #read -p "Press [Enter] key to carry on..."
