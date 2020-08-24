@@ -10,7 +10,7 @@ BUILD_LIBSHARED=1
 BUILD_LIBSTATIC=0
 
 ## Enable LTO both for kernel and applications
-LTOENABLE=1
+LTOENABLE=0
 KERN_LTOENABLE=0
 
 IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
@@ -45,7 +45,7 @@ setup_python
 
 #clean_project
 
-build linux/rpi-kernel_5.8.1
+build linux/rpi-kernel_5.8.2
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.0
