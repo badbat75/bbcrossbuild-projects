@@ -10,7 +10,7 @@ BUILD_LIBSHARED=1
 BUILD_LIBSTATIC=0
 
 ## Enable LTO both for kernel and applications
-LTOENABLE=0
+LTOENABLE=1
 KERN_LTOENABLE=0
 
 IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
@@ -94,7 +94,7 @@ build moode/mpdas_0.4.5+c81c480
 build moode/shairport-sync_3.3.7rc1
 
 # COMPONENT 4B - Librespot
-build moode/librespot_0.1.2
+build moode/librespot_0.1.3
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite_master+b8c8138
