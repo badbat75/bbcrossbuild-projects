@@ -71,7 +71,7 @@ build moode/pi-bluetooth_0.1.13
 build moode/bluez-alsa_2.1.0+e5acb73
 
 # STEP 6 - Compile and install MPD
-# Already built as dependency for moode-dynamic-ver # build moode/mpd_0.21.23
+build moode/mpd_0.21.25
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
