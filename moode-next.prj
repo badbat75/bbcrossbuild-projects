@@ -48,7 +48,7 @@ setup_python
 build linux/rpi-kernel_5.7.16
 
 # Download and install moode-sources and pre-build environment
-build moode/moode-dynamic-ver_1.0
+build moode/moode-dynamic-ver_1.1
 
 # STEP 1 - Modify Raspbian Lite and create a new, base image
 build raspbian/iw_5.4-1
@@ -97,7 +97,7 @@ build moode/shairport-sync_3.3.7rc1
 build moode/librespot_0.1.2
 
 # COMPONENT 5 - Squeezelite
-build moode/squeezelite_master+59fea82
+build moode/squeezelite_master+b8c8138
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.4.12+ee59f03
