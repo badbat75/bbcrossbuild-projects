@@ -45,7 +45,7 @@ setup_python
 
 #clean_project
 
-build linux/rpi-kernel_5.7.19
+build linux/rpi-kernel_5.9.0-rc5
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.1
