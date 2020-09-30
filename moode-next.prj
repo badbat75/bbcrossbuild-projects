@@ -45,7 +45,7 @@ setup_python
 
 #clean_project
 
-build linux/rpi-kernel_5.9.0-rc5
+build linux/rpi-kernel_5.9.0-rc7
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.1
@@ -71,7 +71,7 @@ build moode/pi-bluetooth_0.1.13
 build moode/bluez-alsa_2.1.0+e5acb73
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.21.25
+build moode/mpd_0.22
 build moode/mpc_0.33
 
 # STEP 7 - Create moOde runtime environment
@@ -88,10 +88,10 @@ build moode/minidlna_1.2.1+git076371
 build moode/ashuffle_3.7.2
 
 # COMPONENT 3 - MPD Audio Scrobblea
-build moode/mpdas_0.4.5+c81c480
+#build moode/mpdas_0.4.5+c81c480
 
 # COMPONENT 4A - Shairport-sync
-build moode/shairport-sync_3.3.7rc2
+build moode/shairport-sync_3.3.6
 
 # COMPONENT 4B - Librespot
 build moode/librespot_0.1.3
