@@ -45,7 +45,7 @@ setup_python
 
 #clean_project
 
-build linux/rpi-kernel_5.9.0-rc7
+WITH_RT=0 build linux/rpi-kernel_5.9.0-rc7
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.1
@@ -91,7 +91,7 @@ build moode/ashuffle_3.7.2
 #build moode/mpdas_0.4.5+c81c480
 
 # COMPONENT 4A - Shairport-sync
-build moode/shairport-sync_3.3.6
+WITH_ALAC_LIBRARIES=0 build moode/shairport-sync_3.3.7rc3
 
 # COMPONENT 4B - Librespot
 build moode/librespot_0.1.3
