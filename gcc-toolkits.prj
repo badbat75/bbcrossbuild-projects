@@ -6,6 +6,6 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-bootstrap_sysroot linux/rpi-kernel_5.9.0-rc7 development/glibc_2.32
+bootstrap_sysroot linux/rpi-kernel_5.9.0 development/glibc_2.32
 
 #clean_project
