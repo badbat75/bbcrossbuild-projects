@@ -45,21 +45,16 @@ setup_python
 
 #clean_project
 
-WITH_RT=0 build linux/rpi-kernel_5.9.1
+KEEP_BUILDDIR=1 WITH_RT=0 build linux/rpi-kernel_5.9.1
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.2
 
-# STEP 1 - Modify Raspbian Lite and create a new, base image
 build raspbian/iw_5.8-1
 build moode/wireless-regdb_2020-04-29
 build raspbian/wpa_supplicant_2.9.0-15
 build raspbian/hostapd_2.9.0-15
-
-# STEP 2 - Expand the root partition to 3GB
-# STEP 3 - Install core packages
 build moode/mediainfo_20.09
-
 build moode/alsacap
 
 # USB mounter
@@ -74,21 +69,11 @@ build moode/bluez-alsa_3.0.0
 build moode/mpd_0.22.0
 build moode/mpc_0.33
 
-# STEP 7 - Create moOde runtime environment
-# STEP 8 - Install moOde sources and configs
-# STEP 9 - Alsaequal
-# STEP 10 - Optionally squash /var/www
-# STEP 12 - Launch and configure moOde!
-# STEP 13 - Final prep for image
-
 # COMPONENT 1 - MiniDLNA
 build moode/minidlna_1.2.1+git076371
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle_3.9.2
-
-# COMPONENT 3 - MPD Audio Scrobblea
-#build moode/mpdas_0.4.5+c81c480
 
 # COMPONENT 4A - Shairport-sync
 WITH_ALAC_LIBRARIES=1 build moode/shairport-sync_3.3.6
@@ -102,11 +87,6 @@ build moode/squeezelite_master+b8c8138
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.4.14
 build moode/libupnppsamples_master+2a6e7a
-
-# COMPONENT 7 - Optionally install gmusicapi
-#build python/gmusicapi_13.0.0
-
-# COMPONENT 8 - Local UI display
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
 build firmwares/allo-piano-firmware-master
