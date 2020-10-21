@@ -104,7 +104,7 @@ build moode/upmpdcli_1.4.14
 build moode/libupnppsamples_master+2a6e7a
 
 # COMPONENT 7 - Optionally install gmusicapi
-build python/gmusicapi_13.0.0
+#build python/gmusicapi_13.0.0
 
 # COMPONENT 8 - Local UI display
 
