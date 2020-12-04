@@ -1,7 +1,7 @@
 # Build recipe for moode mediacenter
 
 MOODEREL=r700
-#MOODEDEVCOMMIT=8e62fb737704300fe8e6fd109b1b149249891b2d
+#MOODEDEVCOMMIT=327afe4c6d10d57f45dc737a4414c664046b6149
 RASPBIAN_IMAGE=2020-08-20-raspios-buster-lite-armhf
 RASPBIAN_URL=http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-08-24/
 
@@ -62,7 +62,7 @@ build moode/alsacap
 build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/pi-bluetooth_0.1.15
+build moode/pi-bluetooth_0.1.15+a69d8f5
 build moode/bluez-alsa_3.0.0
 
 # STEP 6 - Compile and install MPD
@@ -76,16 +76,16 @@ build moode/minidlna_1.2.1+git076371
 build moode/ashuffle_3.10
 
 # COMPONENT 4A - Shairport-sync
-WITH_ALAC_LIBRARIES=1 build moode/shairport-sync_3.3.6
+WITH_ALAC_LIBRARIES=1 build moode/shairport-sync_3.3.7
 
 # COMPONENT 4B - Librespot
 build moode/librespot_0.1.3+6a4bc83
 
 # COMPONENT 5 - Squeezelite
-build moode/squeezelite_master+b8c8138
+build moode/squeezelite_master+cfab656
 
 # COMPONENT 6 - Upmpdcli
-build moode/upmpdcli_1.5.1
+build moode/upmpdcli_1.5.3
 build moode/libupnppsamples_master+2a6e7a
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
