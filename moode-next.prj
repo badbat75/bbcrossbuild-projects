@@ -1,7 +1,7 @@
 # Build recipe for moode mediacenter
 
 MOODEREL=r700
-#MOODEDEVCOMMIT=327afe4c6d10d57f45dc737a4414c664046b6149
+#MOODEDEVCOMMIT=182560c473ec35df043b909227ba1d976cbbaf71
 RASPBIAN_IMAGE=2020-12-02-raspios-buster-lite-armhf
 RASPBIAN_URL=http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-12-04/
 
@@ -85,7 +85,7 @@ build moode/librespot_0.1.3+6a4bc83
 build moode/squeezelite_master+cfab656
 
 # COMPONENT 6 - Upmpdcli
-build moode/upmpdcli_1.5.3
+build moode/upmpdcli_1.5
 build moode/libupnppsamples_master+2a6e7a
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
