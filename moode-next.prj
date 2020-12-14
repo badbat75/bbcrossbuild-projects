@@ -1,8 +1,8 @@
 # Build recipe for moode mediacenter
 
 MOODEREL=r700
-#MOODEDEVCOMMIT=182560c473ec35df043b909227ba1d976cbbaf71
-RASPBIAN_IMAGE=2020-12-02-raspios-buster-lite-armhf
+MOODEDEVCOMMIT=182560c473ec35df043b909227ba1d976cbbaf71
+RASPBIAN_IMAGE=2020-12-02-raspios-buster-armhf-lite
 RASPBIAN_URL=http://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2020-12-04/
 
 ## Enable shared libraries (default) but disable static ones
