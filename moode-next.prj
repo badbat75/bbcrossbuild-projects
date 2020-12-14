@@ -50,10 +50,10 @@ KEEP_BUILDDIR=1 WITH_RT=0 build linux/rpi-kernel_5.10
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.2
 
-build raspbian/iw_5.8-1
+build raspbian/iw_5.9-3
 build moode/wireless-regdb_2020-04-29
-build raspbian/wpa_supplicant_2.9.0-15
-build raspbian/hostapd_2.9.0-15
+build raspbian/wpa_supplicant_2.9.0
+build raspbian/hostapd_2.9.0
 build moode/mediainfo_20.09
 build moode/alsacap
 
@@ -66,7 +66,7 @@ build moode/pi-bluetooth_0.1.15+a69d8f5
 build moode/bluez-alsa_3.0.0
 
 # STEP 6 - Compile and install MPD
-build moode/mpd_0.22.0
+build moode/mpd_0.22
 build moode/mpc_0.33
 
 # COMPONENT 1 - MiniDLNA
@@ -86,7 +86,8 @@ build moode/squeezelite_master+cfab656
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.5
-build moode/libupnppsamples_master+2a6e7a
+build moode/libupnppsamples_moode
+#build moode/libupnppsamples_master+2a6e7a
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
 build firmwares/allo-piano-firmware-master
