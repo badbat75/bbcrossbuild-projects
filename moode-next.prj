@@ -131,7 +131,6 @@ run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 
 run_on_root_dir temp root "apt-get -y purge --autoremove libcephfs2"
 run_on_root_dir temp root "apt-get clean"
-read -n 1 -s -r -p "Press any key to continue"
 
 #create_sfx_archive remove_devfiles
 inject_into_root_dir --remove_devfiles temp binaries
