@@ -69,6 +69,13 @@ build moode/bluez-alsa_3.0.0
 build moode/mpd_0.22
 build moode/mpc_0.33
 
+# STEP 9a - Eq2Fa12p
+build moode/caps_0.9.26-eqfa12p+22ef349
+
+# STEP 9b - CamillaDSP and alsa_cdsp
+build moode/camilladsp-0.5.0-beta2
+build moode/alsa-cdsp+4cd995
+
 # COMPONENT 1 - MiniDLNA
 build moode/minidlna_1.2.1+git076371
 
