@@ -93,6 +93,7 @@ build moode/squeezelite_master+cfab656
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.5
+build moode/libupnpp-bindings_0.20
 build moode/libupnppsamples_moode
 #build moode/libupnppsamples_master+2a6e7a
 
