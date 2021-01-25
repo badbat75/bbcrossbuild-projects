@@ -51,7 +51,7 @@ KEEP_BUILDDIR=1 WITH_RT=0 build linux/rpi-kernel_5.10
 build moode/moode-dynamic-ver_1.2
 
 build raspbian/iw_5.9-3
-build moode/wireless-regdb_2020-04-29
+build moode/wireless-regdb_2020-11-20
 build raspbian/wpa_supplicant_2.9.0
 build raspbian/hostapd_2.9.0
 build moode/mediainfo_20.09
