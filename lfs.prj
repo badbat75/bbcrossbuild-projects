@@ -9,6 +9,8 @@ KERN_LTOENABLE=0
 bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
 install_gcclibs
 
+build lfs/rpi-firmware_1.20210201
+
 build lfs/create-base-fs_1.0
 build lfs/create-base-config_1.0
 
@@ -18,8 +20,17 @@ build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
 build lfs/zstd_1.4.8
 build lfs/file_5.38
+build lfs/libcap_2.47
+build lfs/ncurses_6.2+p20210130
 build lfs/bash_5.1+p4
 build lfs/coreutils_8.32
+build lfs/systemd_247
+build lfs/procps-ng_3.3.16
+build lfs/util-linux_2.36.1
+
+echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
+echo "net.ifnames=0 console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 \
+    rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait init=/usr/bin/bash" >${BIN_PATH}/boot/cmdline.txt
 
 #create_sfx_archive remove_devfiles
 zip_project
