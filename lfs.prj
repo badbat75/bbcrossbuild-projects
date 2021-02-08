@@ -21,9 +21,16 @@ build lfs/xz_5.2.5
 build lfs/zstd_1.4.8
 build lfs/file_5.38
 build lfs/libcap_2.47
+build lfs/shadow_4.8.1
+build lfs/sed_4.8
+build lfs/psmisc_23.3
+build lfs/grep_3.6
 build lfs/ncurses_6.2+p20210130
 build lfs/bash_5.1+p4
+build lfs/kmod_28
 build lfs/coreutils_8.32
+build lfs/findutils_4.8.0
+build lfs/less_563
 build lfs/systemd_247
 build lfs/procps-ng_3.3.16
 build lfs/util-linux_2.36.1
