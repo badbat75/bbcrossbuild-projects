@@ -27,16 +27,24 @@ build lfs/psmisc_23.3
 build lfs/grep_3.6
 build lfs/ncurses_6.2+p20210130
 build lfs/bash_5.1+p4
+build lfs/gdbm_1.19
 build lfs/expat_2.2.10
+build lfs/kmod_28
 build lfs/coreutils_8.32
+build lfs/gawk_5.1.0
 build lfs/findutils_4.8.0
 build lfs/less_563
+build lfs/gzip_1.10
 build lfs/kbd_2.4.0
+build lfs/libpipeline_1.5.3
+build lfs/man-db_2.9.3
+build lfs/tar_1.33
 build lfs/vim_8.2.2433
 build lfs/systemd_247
 build lfs/D-Bus_1.12.20
 build lfs/procps-ng_3.3.16
 build lfs/util-linux_2.36.1
+build lfs/e2fsprogs_1.46
 
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 \
