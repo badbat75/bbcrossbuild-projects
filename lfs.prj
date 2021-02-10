@@ -15,6 +15,7 @@ install_gcclibs
 
 build lfs/rpi-firmware_1.20210201
 build linux/rpi-kernel_5.10
+build lfs/man-pages_5.10
 build lfs/zlib_1.2.11
 build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
@@ -29,12 +30,17 @@ build lfs/ncurses_6.2+p20210130
 build lfs/bash_5.1+p4
 build lfs/gdbm_1.19
 build lfs/expat_2.2.10
+build lfs/inetutils_2.0
 build lfs/kmod_28
+build lfs/elfutils_0.182
+build lfs/openssl_1.1.1i
 build lfs/coreutils_8.32
 build lfs/gawk_5.1.0
 build lfs/findutils_4.8.0
+build lfs/groff_1.22.4
 build lfs/less_563
 build lfs/gzip_1.10
+build lfs/iproute2_5.10.0
 build lfs/kbd_2.4.0
 build lfs/libpipeline_1.5.3
 build lfs/man-db_2.9.3
@@ -47,8 +53,7 @@ build lfs/util-linux_2.36.1
 build lfs/e2fsprogs_1.46
 
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-echo "net.ifnames=0 console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 \
-    rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait systemd.journald.forward_to_console=1 systemd.log_target=console" >${BIN_PATH}/boot/cmdline.txt
+echo "net.ifnames=0 console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
 #create_sfx_archive remove_devfiles
 zip_project remove_devfiles
