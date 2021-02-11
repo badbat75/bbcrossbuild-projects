@@ -16,6 +16,7 @@ install_gcclibs
 build lfs/rpi-firmware_1.20210201
 build linux/rpi-kernel_5.10
 build lfs/man-pages_5.10
+# WITH_LIBXCRYPT=1 build development/glibc_2.33
 build lfs/zlib_1.2.11
 build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
@@ -37,6 +38,7 @@ build lfs/bash_5.1+p4
 build lfs/gdbm_1.19
 build lfs/expat_2.2.10
 build lfs/inetutils_2.0
+#build lfs/perl_5.32.1
 build lfs/kmod_28
 build lfs/elfutils_0.182
 build lfs/libffi_3.3
