@@ -13,10 +13,9 @@ bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxc
 
 install_gcclibs
 
-build lfs/rpi-firmware_1.20210201
-build linux/rpi-kernel_5.10
+build raspberrypi/rpi-firmware_1.20210201
+build raspberrypi/rpi-kernel_5.10
 build lfs/man-pages_5.10
-# WITH_LIBXCRYPT=1 build development/glibc_2.33
 build lfs/zlib_1.2.11
 build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
