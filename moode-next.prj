@@ -13,9 +13,9 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
-	${RASPBIAN_IMAGE}.img distos 2:/ 1:/boot
-run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
+mount_from --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img \
+	--tag distos --mountlist "2:/ 1:/boot" --resize 2:3G
+run_on_root_dir -v distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
 run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
@@ -108,10 +108,10 @@ build firmwares/broadcom-bt-firmware-master
 
 install_gcclibs
 
-unmount_dir distos
+unmount_tag distos
 
-IMGRESIZE=2:3G mount_from ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip \
-	${RASPBIAN_IMAGE}.img temp 2:/ 1:/boot
+mount_from --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img \
+	--tag temp --mountlist "2:/ 1:/boot" --resize 2:3G
 
 run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential raspberrypi-kernel bluez \
 	wpasupplicant iw"
@@ -141,7 +141,7 @@ run_on_root_dir temp root "apt-get -y purge --autoremove libcephfs2"
 run_on_root_dir temp root "apt-get clean"
 
 #create_sfx_archive remove_devfiles
-inject_into_root_dir --remove_devfiles temp binaries
+inject_into_mount_tag --remove_devfiles temp binaries
 
 # Run /root/firstboot at first boot, enable verbose boot and set physical boot device
 run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
@@ -252,9 +252,9 @@ run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 EOF"
 run_on_root_dir temp root "chmod +x /root/firstboot"
 
-[ -f ~/moodecfg.ini ] && inject_into_root_dir temp ~/moodecfg.ini /boot || true
+[ -f ~/moodecfg.ini ] && inject_into_mount_tag temp ~/moodecfg.ini /boot || true
 
 # Uncomment it to navigate in the temp filesystem
 #read -p "Press [Enter] key to carry on..."
 
-unmount_dir --finalize temp
+unmount_tag --finalize temp
