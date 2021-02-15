@@ -13,9 +13,8 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-mount_from --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img \
-	--tag distos --mountlist "2:/ 1:/boot" --resize 2:3G
-run_on_root_dir -v distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
+mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
+run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
 run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
@@ -110,8 +109,7 @@ install_gcclibs
 
 unmount_tag distos
 
-mount_from --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img \
-	--tag temp --mountlist "2:/ 1:/boot" --resize 2:3G
+mount_tag temp --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
 
 run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential raspberrypi-kernel bluez \
 	wpasupplicant iw"

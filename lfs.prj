@@ -64,5 +64,10 @@ build lfs/e2fsprogs_1.46
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
+create_image lfs --rootfstype btrfs --size 1MiB
+mount_tag lfs --mountlist "2:/ 1:/boot"
+inject_into_mount_tag lfs binaries --remove_devfiles
+unmount_tag --finalize lfs
+
 #create_sfx_archive remove_devfiles
-zip_project remove_devfiles
+#zip_project remove_devfiles
