@@ -37,7 +37,7 @@ build lfs/bash_5.1+p4
 build lfs/gdbm_1.19
 build lfs/expat_2.2.10
 build lfs/inetutils_2.0
-#build lfs/perl_5.32.1
+KEEP_BUILDDIR=1 build lfs/perl_5.32.1
 build lfs/kmod_28
 build lfs/elfutils_0.182
 build lfs/libffi_3.3
