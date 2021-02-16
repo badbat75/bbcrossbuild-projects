@@ -67,7 +67,7 @@ build lfs/strace_5.10
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
-create_image lfs --rootfstype ext4 --size 2MiB
+create_image lfs --rootfstype btrfs --size 2MiB
 mount_tag lfs --mountlist "2:/ 1:/boot"
 inject_into_mount_tag lfs binaries --remove_devfiles
 unmount_tag --finalize lfs
