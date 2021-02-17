@@ -37,7 +37,9 @@ build lfs/bash_5.1+p4
 build lfs/gdbm_1.19
 build lfs/expat_2.2.10
 build lfs/inetutils_2.0
+build perl/XML::Parser_2.46
 build lfs/perl_5.32.1
+build lfs/intltool_0.51.0
 build lfs/kmod_28
 build lfs/elfutils_0.182
 build lfs/libffi_3.3
@@ -67,10 +69,10 @@ build lfs/strace_5.10
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
-create_image lfs --rootfstype btrfs --size 2MiB
-mount_tag lfs --mountlist "2:/ 1:/boot"
-inject_into_mount_tag lfs binaries --remove_devfiles
-unmount_tag --finalize lfs
+#create_image lfs --rootfstype btrfs --size 2MiB
+#mount_tag lfs --mountlist "2:/ 1:/boot"
+#inject_into_mount_tag lfs binaries --remove_devfiles
+#unmount_tag --finalize lfs
 
 #create_sfx_archive remove_devfiles
 #zip_project remove_devfiles
