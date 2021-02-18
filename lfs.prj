@@ -14,8 +14,10 @@ bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxc
 install_gcclibs
 
 build raspberrypi/rpi-firmware_1.20210201
+build firmwares/linux-firmware_20210208
 build raspberrypi/rpi-kernel_5.10
 build lfs/man-pages_5.10
+build lfs/iana-etc_20210202
 build lfs/zlib_1.2.11
 build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
@@ -64,15 +66,25 @@ build lfs/util-linux_2.36.1
 build lfs/e2fsprogs_1.46
 build lfs/btrfs-progs_5.10.1
 build lfs/dosfstools_4.2
+### System Utilities
+build lfs/usb-utils_013
+#build lfs/pciutils_5.7.0
+### Network
+build lfs/dhcp_4.4.2
+build firmwares/wireless-regdb_2020.11.20
+build lfs/wpa_supplicant_2.9.0
+build lfs/iw_5.9
+build lfs/wireless-tools_29
+### Development
 build lfs/strace_5.10
 
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
-#create_image lfs --rootfstype btrfs --size 2MiB
-#mount_tag lfs --mountlist "2:/ 1:/boot"
-#inject_into_mount_tag lfs binaries --remove_devfiles
-#unmount_tag --finalize lfs
+create_image lfs --rootfstype btrfs --size 2MiB
+mount_tag lfs --mountlist "2:/ 1:/boot"
+inject_into_mount_tag lfs binaries --remove_devfiles
+unmount_tag --finalize lfs
 
 #create_sfx_archive remove_devfiles
 #zip_project remove_devfiles
