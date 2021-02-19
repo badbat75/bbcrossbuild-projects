@@ -108,7 +108,7 @@ create_image lfs --rootfstype btrfs --size 2MiB
 mount_tag lfs --mountlist "2:/ 1:/boot"
 inject_into_mount_tag lfs binaries --remove_devfiles
 run_on_root_dir lfs root "/root/postinstall"
-run_on_root_dir lfs root "useradd -G wheel lfs"
+run_on_root_dir lfs root "useradd -G wheel -m lfs"
 run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
 unmount_tag --finalize lfs
 
