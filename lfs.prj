@@ -9,6 +9,8 @@ KERN_LTOENABLE=0
 build lfs/create-base-fs_1.0
 build lfs/create-base-config_1.0
 
+mkdir -p ${USERDATA_PATH}/postinstall
+
 bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
 
 install_gcclibs
@@ -66,6 +68,9 @@ build lfs/util-linux_2.36.1
 build lfs/e2fsprogs_1.46
 build lfs/btrfs-progs_5.10.1
 build lfs/dosfstools_4.2
+### Security
+build lfs/sudo_1.9.5p2
+build lfs/openssh_8.4p1
 ### System Utilities
 build lfs/usb-utils_013
 #build lfs/pciutils_5.7.0
@@ -75,15 +80,36 @@ build firmwares/wireless-regdb_2020.11.20
 build lfs/wpa_supplicant_2.9.0
 build lfs/iw_5.9
 build lfs/wireless-tools_29
+build lfs/bind_9.16.12
 ### Development
 build lfs/strace_5.10
 
+### Final configurations ###
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
+
+if [ ! -x ${WLAN_SSID} ] && [ ! -x ${WLAN_PSK} ] && [ ! -x ${WLAN_DEV} ]
+then
+    echo Configuring WiFi
+    wpa_passphrase ${WLAN_SSID} ${WLAN_PSK} > ${BIN_PATH}${BUILD_SYSCONFDIR}/wpa_supplicant/wpa_supplicant-${WLAN_DEV}.conf
+    systemctl --root=${BIN_PATH} enable wpa_supplicant@${WLAN_DEV}
+    systemctl --root=${BIN_PATH} enable dhclient@${WLAN_DEV}
+fi
+
+echo "#!/bin/bash" >${BIN_PATH}/root/postinstall
+echo "set -x" >>${BIN_PATH}/root/postinstall
+find ${USERDATA_PATH}/postinstall -name "*.task" -exec cat {} >> ${BIN_PATH}/root/postinstall \;
+echo "rm -f /root/postinstall" >> ${BIN_PATH}/root/postinstall
+echo "set +x" >> ${BIN_PATH}/root/postinstall
+chmod +x ${BIN_PATH}/root/postinstall
+############################
 
 create_image lfs --rootfstype btrfs --size 2MiB
 mount_tag lfs --mountlist "2:/ 1:/boot"
 inject_into_mount_tag lfs binaries --remove_devfiles
+run_on_root_dir lfs root "/root/postinstall"
+run_on_root_dir lfs root "useradd -G wheel lfs"
+run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
 unmount_tag --finalize lfs
 
 #create_sfx_archive remove_devfiles
