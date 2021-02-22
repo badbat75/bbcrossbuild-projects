@@ -11,13 +11,15 @@ build lfs/create-base-config_1.0
 
 mkdir -p ${USERDATA_PATH}/postinstall
 
-bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
+bootstrap_sysroot raspberrypi/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
 
 install_gcclibs
 
 build raspberrypi/rpi-firmware_1.20210201
 build firmwares/linux-firmware_20210208
 build raspberrypi/rpi-kernel_5.10
+build development/glibc_2.33
+build lfs/tzdata_2021a
 build lfs/man-pages_5.10
 build lfs/iana-etc_20210202
 build lfs/zlib_1.2.11
@@ -110,6 +112,7 @@ inject_into_mount_tag lfs binaries --remove_devfiles
 run_on_root_dir lfs root "/root/postinstall"
 run_on_root_dir lfs root "useradd -G wheel -m lfs"
 run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
+run_on_root_dir lfs root "pwconv"
 unmount_tag --finalize lfs
 
 #create_sfx_archive remove_devfiles
