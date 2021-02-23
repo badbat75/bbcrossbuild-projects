@@ -11,14 +11,14 @@ build lfs/create-base-config_1.0
 
 mkdir -p ${USERDATA_PATH}/postinstall
 
-bootstrap_sysroot raspberrypi/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
+bootstrap_sysroot raspberrypi/rpi-kernel_5.10 lfs/glibc_2.33 lfs/libxcrypt_4.4.17
 
 install_gcclibs
 
 build raspberrypi/rpi-firmware_1.20210201
 build firmwares/linux-firmware_20210208
 build raspberrypi/rpi-kernel_5.10
-build development/glibc_2.33
+build lfs/glibc_2.33
 build lfs/tzdata_2021a
 build lfs/man-pages_5.10
 build lfs/iana-etc_20210202
@@ -76,6 +76,7 @@ build lfs/openssh_8.4p1
 ### System Utilities
 build lfs/usb-utils_013
 #build lfs/pciutils_5.7.0
+build lfs/lsof_4.91
 ### Network
 build lfs/dhcp_4.4.2
 build firmwares/wireless-regdb_2020.11.20
@@ -83,12 +84,13 @@ build lfs/wpa_supplicant_2.9.0
 build lfs/iw_5.9
 build lfs/wireless-tools_29
 build lfs/bind_9.16.12
+build lfs/curl_7.75.0
 ### Development
 build lfs/strace_5.10
 
 ### Final configurations ###
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 elevator=deadline fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
+echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
 if [ ! -x ${WLAN_SSID} ] && [ ! -x ${WLAN_PSK} ] && [ ! -x ${WLAN_DEV} ]
 then
@@ -96,6 +98,14 @@ then
     wpa_passphrase ${WLAN_SSID} ${WLAN_PSK} > ${BIN_PATH}${BUILD_SYSCONFDIR}/wpa_supplicant/wpa_supplicant-${WLAN_DEV}.conf
     systemctl --root=${BIN_PATH} enable wpa_supplicant@${WLAN_DEV}
     systemctl --root=${BIN_PATH} enable dhclient@${WLAN_DEV}
+    echo
+fi
+if [ x${ENABLE_SSH} != x ]
+then
+    echo Enabling SSHd
+    ssh-keygen -A -f ${BIN_PATH}
+    systemctl --root=${BIN_PATH} enable sshd
+    echo
 fi
 
 echo "#!/bin/bash" >${BIN_PATH}/root/postinstall
