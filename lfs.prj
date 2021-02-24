@@ -67,7 +67,7 @@ build lfs/vim_8.2.2433
 build lfs/systemd_247
 build lfs/D-Bus_1.12.20
 build lfs/procps-ng_3.3.16
-build lfs/util-linux_2.36.1
+build lfs/util-linux_2.36.2
 build lfs/e2fsprogs_1.46
 build lfs/btrfs-progs_5.10.1
 build lfs/dosfstools_4.2
@@ -131,14 +131,18 @@ echo "set +x" >> ${BIN_PATH}/root/postinstall
 chmod +x ${BIN_PATH}/root/postinstall
 ############################
 
-create_image lfs --rootfstype btrfs --size 3MiB
-mount_tag lfs --mountlist "2:/ 1:/boot"
-inject_into_mount_tag lfs binaries --remove_devfiles
-run_on_root_dir lfs root "/root/postinstall"
-run_on_root_dir lfs root "useradd -G wheel -m lfs"
-run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
-run_on_root_dir lfs root "pwconv"
-unmount_tag --finalize lfs
+function build_lfs_image () {
+	create_image lfs --rootfstype btrfs --size 3MiB
+	mount_tag lfs --mountlist "2:/ 1:/boot"
+	inject_into_mount_tag lfs binaries --remove_devfiles
+	run_on_root_dir lfs root "/root/postinstall"
+	run_on_root_dir lfs root "useradd -G wheel -m lfs"
+	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
+	run_on_root_dir lfs root "pwconv"
+	unmount_tag --finalize lfs
+}
+
+#build_lfs_image
 
 #create_sfx_archive remove_devfiles
 #zip_project remove_devfiles
