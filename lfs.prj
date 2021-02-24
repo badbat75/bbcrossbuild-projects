@@ -142,7 +142,7 @@ function build_lfs_image () {
 	unmount_tag --finalize lfs
 }
 
-#build_lfs_image
+build_lfs_image
 
 #create_sfx_archive remove_devfiles
 #zip_project remove_devfiles
