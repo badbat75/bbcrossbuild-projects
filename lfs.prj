@@ -52,6 +52,7 @@ build lfs/libffi_3.3
 build lfs/openssl_1.1.1i
 build lfs/python_3.8.7 && setup_python
 build lfs/coreutils_8.32
+build lfs/diffutils_3.7
 build lfs/gawk_5.1.0
 build lfs/findutils_4.8.0
 build lfs/groff_1.22.4
@@ -74,6 +75,8 @@ build lfs/dosfstools_4.2
 build lfs/sudo_1.9.5p2
 build lfs/openssh_8.4p1
 ### System Utilities
+build raspberrypi/pi-bluetooth_0.1.15+63b706a
+build lfs/bluez_5.55
 build lfs/usb-utils_013
 #build lfs/pciutils_5.7.0
 build lfs/lsof_4.91
@@ -92,20 +95,32 @@ build lfs/strace_5.10
 echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
 
+if [ ! -x ${LFS_HOSTNAME} ]
+then
+	echo Configuring Host Name
+	echo ${LFS_HOSTNAME} > ${BIN_PATH}${BUILD_SYSCONFDIR}/hostname
+fi
 if [ ! -x ${WLAN_SSID} ] && [ ! -x ${WLAN_PSK} ] && [ ! -x ${WLAN_DEV} ]
 then
-    echo Configuring WiFi
-    wpa_passphrase ${WLAN_SSID} ${WLAN_PSK} > ${BIN_PATH}${BUILD_SYSCONFDIR}/wpa_supplicant/wpa_supplicant-${WLAN_DEV}.conf
-    systemctl --root=${BIN_PATH} enable wpa_supplicant@${WLAN_DEV}
-    systemctl --root=${BIN_PATH} enable dhclient@${WLAN_DEV}
-    echo
+	echo Configuring WiFi
+	wpa_passphrase ${WLAN_SSID} ${WLAN_PSK} > ${BIN_PATH}${BUILD_SYSCONFDIR}/wpa_supplicant/wpa_supplicant-${WLAN_DEV}.conf
+	systemctl --root=${BIN_PATH} enable wpa_supplicant@${WLAN_DEV}
+	cat > ${BIN_PATH}/etc/systemd/network/${WLAN_DEV}.network <<-EOF
+		[Match]
+		Name=${WLAN_DEV}
+		SSID=${WLAN_SSID}
+
+		[Network]
+		DHCP=yes
+	EOF
+	echo
 fi
 if [ x${ENABLE_SSH} != x ]
 then
-    echo Enabling SSHd
-    ssh-keygen -A -f ${BIN_PATH}
-    systemctl --root=${BIN_PATH} enable sshd
-    echo
+	echo Enabling SSHd
+	ssh-keygen -A -f ${BIN_PATH}
+	systemctl --root=${BIN_PATH} enable sshd
+	echo
 fi
 
 echo "#!/bin/bash" >${BIN_PATH}/root/postinstall
@@ -116,7 +131,7 @@ echo "set +x" >> ${BIN_PATH}/root/postinstall
 chmod +x ${BIN_PATH}/root/postinstall
 ############################
 
-create_image lfs --rootfstype btrfs --size 2MiB
+create_image lfs --rootfstype btrfs --size 3MiB
 mount_tag lfs --mountlist "2:/ 1:/boot"
 inject_into_mount_tag lfs binaries --remove_devfiles
 run_on_root_dir lfs root "/root/postinstall"
