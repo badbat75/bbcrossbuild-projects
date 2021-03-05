@@ -61,8 +61,9 @@ build moode/alsacap
 build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
+build moode/bluez_5.56
 build raspberrypi/pi-bluetooth_0.1.15+63b706a
-WITH_APTX=libopenaptx build moode/bluez-alsa_3.0.0+cbe95ae
+WITH_APTX=openaptx build moode/bluez-alsa_3.0.0+cbe95ae
 
 # STEP 6 - Compile and install MPD
 build moode/mpd_0.22
@@ -142,12 +143,12 @@ run_on_root_dir temp root "apt-get clean"
 inject_into_mount_tag --remove_devfiles temp binaries
 
 # Run /root/firstboot at first boot, enable verbose boot and set physical boot device
-run_on_root_dir temp root "sed -i 's|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||' /boot/cmdline.txt"
+run_on_root_dir temp root "sed -i \"s|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||\" /boot/cmdline.txt"
 # Users and groups
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'MediaPlayer Daemon' -d /var/lib/mpd mpd || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c 'AirPlay Daemon' -d /var/lib/shairport-sync shairport-sync || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'UPnP Media Renderer Client' -d /var/lib/upmpdcli upmpdcli || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c 'MiniDLNA server' -d /var/lib/minidlna minidlna || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"MediaPlayer Daemon\" -d /var/lib/mpd mpd || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"AirPlay Daemon\" -d /var/lib/shairport-sync shairport-sync || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"UPnP Media Renderer Client\" -d /var/lib/upmpdcli upmpdcli || true"
+run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"MiniDLNA server\" -d /var/lib/minidlna minidlna || true"
 run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
 # File permissions
 run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
@@ -163,11 +164,11 @@ run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
 # Start-up configuration
 #run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf || true"
 run_on_root_dir temp root "touch /boot/ssh"
-run_on_root_dir temp root "sed -i 's| quiet.*||;s|^|net.ifnames=0 |' /boot/cmdline.txt"
-run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hostname"
-run_on_root_dir temp root "sed -i 's/raspberrypi/moode/' /etc/hosts"
-run_on_root_dir temp root "sed -i '/hosts:/ s/$/ wins mdns4/' /etc/nsswitch.conf"
-run_on_root_dir temp root "sed -i 's/allowed_users=console/allowed_users=anybody/' /etc/X11/Xwrapper.config"
+run_on_root_dir temp root "sed -i \"s| quiet.*||;s|^|net.ifnames=0 |\" /boot/cmdline.txt"
+run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hostname"
+run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hosts"
+run_on_root_dir temp root "sed -i \"/hosts:/ s/$/ wins mdns4/\" /etc/nsswitch.conf"
+run_on_root_dir temp root "sed -i \"s/allowed_users=console/allowed_users=anybody/\" /etc/X11/Xwrapper.config"
 run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
 run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
 run_on_root_dir temp root "dphys-swapfile swapoff"
@@ -216,7 +217,7 @@ run_on_root_dir temp root "systemctl disable triggerhappy"
 run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 	#!/bin/sh
 	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
-	date -s "@$(date +%s)"
+	date -s \"@$(date +%s)\"
 	mkdir /dev/pts
 	mount -t devpts devpts /dev/pts
 	mount -t proc proc /proc
@@ -239,7 +240,7 @@ run_on_root_dir temp root "cat <<-EOF > /root/firstboot
 	#su - mpd -c \"/usr/bin/mpd --kill /etc/mpd.conf\"
 
 	#revert to normal boot
-	sed -i ' s|init=/root/firstboot||' /boot/cmdline.txt
+	sed -i \" s|init=/root/firstboot||\" /boot/cmdline.txt
 
 	umount /boot
 	mount -oremount,ro /dev/mmcblk0p2 /

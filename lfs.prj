@@ -26,7 +26,7 @@ build lfs/zlib_1.2.11
 build lfs/bzip2_1.0.8
 build lfs/xz_5.2.5
 build lfs/zstd_1.4.8
-build lfs/file_5.38
+build lfs/file_5.39
 build lfs/readline_8.1
 build lfs/bc_1.0.7
 build lfs/gmp_6.2.1
@@ -50,7 +50,7 @@ build lfs/kmod_28
 build lfs/elfutils_0.182
 build lfs/libffi_3.3
 build lfs/openssl_1.1.1i
-build lfs/python_3.8.7 && setup_python
+build lfs/python_3.9.2 && setup_python
 build lfs/coreutils_8.32
 build lfs/diffutils_3.7
 build lfs/gawk_5.1.0
@@ -58,7 +58,7 @@ build lfs/findutils_4.8.0
 build lfs/groff_1.22.4
 build lfs/less_563
 build lfs/gzip_1.10
-build lfs/iproute2_5.10.0
+build lfs/iproute2_5.11.0
 build lfs/kbd_2.4.0
 build lfs/libpipeline_1.5.3
 build lfs/man-db_2.9.3
