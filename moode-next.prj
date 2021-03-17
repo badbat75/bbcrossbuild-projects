@@ -23,9 +23,14 @@ run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
 	libbsd-dev libncurses5-dev libsndfile1-dev \
 	\
-	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libasound2-dev libshout3-dev libyajl-dev libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev \
+	libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
+	libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
 	\
-	libasound2-dev libpopt-dev libavahi-client-dev libssl-dev \
+	libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
+	libsamplerate0-dev libtwolame-dev libogg-dev \
+	\
+	libpopt-dev libavahi-client-dev libssl-dev \
 	libexpat1-dev libxml2-dev libxslt1-dev \
 	libjpeg62-turbo-dev \
 	\
@@ -44,7 +49,7 @@ setup_python
 
 #clean_project
 
-KEEP_BUILDDIR=1 WITH_RT=0 build raspberrypi/rpi-kernel_5.10
+KEEP_BUILDDIR=1 build raspberrypi/rpi-kernel_5.11
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.2
@@ -80,7 +85,7 @@ build moode/alsa-cdsp+bbf06dd
 build moode/minidlna_1.2.1+git076371
 
 # COMPONENT 2 - Auto-shuffle
-build moode/ashuffle_3.10
+build moode/ashuffle_3.11
 
 # COMPONENT 4A - Shairport-sync
 WITH_ALAC=1 build moode/shairport-sync_3.3.8
@@ -106,154 +111,160 @@ build firmwares/broadcom-bt-firmware-master
 #
 # FINAL - Clean up
 
+build raspbian/sox_14.4.2+git20190427-2
+build raspbian/flac_1.3.3-2
+
 install_gcclibs
 
 unmount_tag distos
 
-mount_tag temp --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
+if [ -z ${DISABLE_FINAL_IMG} ]
+then
+	mount_tag temp --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
 
-run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential raspberrypi-kernel bluez \
-	wpasupplicant iw"
-run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
-run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
-	php-fpm nginx sqlite3 php-sqlite3 php7.3-gd \
-	bs2b-ladspa libbs2b0 libasound2-plugin-equal \
-	\
-	telnet sysstat squashfs-tools shellinabox \
-	samba smbclient exfat-fuse inotify-tools ffmpeg \
-	avahi-utils winbind libnss-winbind djmount haveged xfsprogs zip id3v2\
-	udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
-	\
-	libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
-	\
-	dnsmasq \
-	\
-	expect \
-	\
-	libopusfile0 \
-	xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
-	\
-	python3-dbus"
+	run_on_root_dir temp root "apt-get -y purge --autoremove gcc-8 build-essential raspberrypi-kernel bluez \
+		wpasupplicant iw"
+	run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
+	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+		php-fpm nginx sqlite3 php-sqlite3 php7.3-gd php-yaml \
+		bs2b-ladspa libbs2b0 libasound2-plugin-equal \
+		\
+		telnet sysstat squashfs-tools shellinabox \
+		samba smbclient exfat-fuse inotify-tools ffmpeg \
+		avahi-utils winbind libnss-winbind djmount haveged xfsprogs zip id3v2\
+		udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
+		\
+		libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
+		\
+		dnsmasq \
+		\
+		expect \
+		\
+		libopusfile0 \
+		xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
+		\
+		python3-dbus"
 
-run_on_root_dir temp root "apt-get -y purge --autoremove libcephfs2"
-run_on_root_dir temp root "apt-get clean"
+	run_on_root_dir temp root "apt-get -y purge --autoremove libcephfs2"
+	run_on_root_dir temp root "apt-get clean"
 
-#create_sfx_archive remove_devfiles
-inject_into_mount_tag --remove_devfiles temp binaries
+	#create_sfx_archive remove_devfiles
+	inject_into_mount_tag --remove_devfiles temp binaries
 
-# Run /root/firstboot at first boot, enable verbose boot and set physical boot device
-run_on_root_dir temp root "sed -i \"s|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||\" /boot/cmdline.txt"
-# Users and groups
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"MediaPlayer Daemon\" -d /var/lib/mpd mpd || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"AirPlay Daemon\" -d /var/lib/shairport-sync shairport-sync || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"UPnP Media Renderer Client\" -d /var/lib/upmpdcli upmpdcli || true"
-run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"MiniDLNA server\" -d /var/lib/minidlna minidlna || true"
-run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
-# File permissions
-run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
-#run_on_root_dir temp root "chown root:netdev /etc/dhcpcd.conf"
-run_on_root_dir temp root "chown -R pi:pi /home/pi"
-run_on_root_dir temp root "chown www-data:www-data /var/local/php"
-run_on_root_dir temp root "chown -R mpd:audio /var/lib/mpd"
-run_on_root_dir temp root "chown -R mpd:audio /var/log/mpd"
-run_on_root_dir temp root "chown mpd:audio /etc/mpd.conf"
-run_on_root_dir temp root "chown mpd:audio /run/mpd"
-run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
-run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
-# Start-up configuration
-#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf || true"
-run_on_root_dir temp root "touch /boot/ssh"
-run_on_root_dir temp root "sed -i \"s| quiet.*||;s|^|net.ifnames=0 |\" /boot/cmdline.txt"
-run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hostname"
-run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hosts"
-run_on_root_dir temp root "sed -i \"/hosts:/ s/$/ wins mdns4/\" /etc/nsswitch.conf"
-run_on_root_dir temp root "sed -i \"s/allowed_users=console/allowed_users=anybody/\" /etc/X11/Xwrapper.config"
-run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
-run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
-run_on_root_dir temp root "dphys-swapfile swapoff"
-run_on_root_dir temp root "dphys-swapfile uninstall"
-run_on_root_dir temp root "systemctl disable dphys-swapfile"
-run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
-run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
-run_on_root_dir temp root "sudo rm /etc/motd || true"
-#run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
-# Start-up services
-#run_on_root_dir temp root "systemctl daemon-reload"
-run_on_root_dir temp root "systemctl set-default multi-user.target"
-run_on_root_dir temp root "systemctl disable cron.service"
-run_on_root_dir temp root "systemctl enable rpcbind"
-run_on_root_dir temp root "systemctl stop apt-daily.timer"
-run_on_root_dir temp root "systemctl disable apt-daily.timer"
-run_on_root_dir temp root "systemctl mask apt-daily.timer"
-run_on_root_dir temp root "systemctl stop apt-daily-upgrade.timer"
-run_on_root_dir temp root "systemctl disable apt-daily-upgrade.timer"
-run_on_root_dir temp root "systemctl mask apt-daily-upgrade.timer"
-run_on_root_dir temp root "systemctl enable haveged"
-run_on_root_dir temp root "systemctl disable shellinabox"
-run_on_root_dir temp root "systemctl disable phpsessionclean.service"
-run_on_root_dir temp root "systemctl disable phpsessionclean.timer"
-run_on_root_dir temp root "systemctl disable hostapd"
-run_on_root_dir temp root "systemctl disable dnsmasq"
-run_on_root_dir temp root "systemctl disable bluetooth.service"
-run_on_root_dir temp root "systemctl disable hciuart.service"
-run_on_root_dir temp root "systemctl disable bluealsa"
-run_on_root_dir temp root "systemctl disable mpd.service"
-run_on_root_dir temp root "systemctl disable mpd.socket"
-run_on_root_dir temp root "systemctl disable rotenc.service"
-run_on_root_dir temp root "systemctl disable squeezelite"
-run_on_root_dir temp root "systemctl disable upmpdcli.service"
-run_on_root_dir temp root "systemctl disable minidlna"
-run_on_root_dir temp root "systemctl disable upmpdcli"
-run_on_root_dir temp root "systemctl disable localui"
-run_on_root_dir temp root "systemctl disable udisks2"
-run_on_root_dir temp root "systemctl disable triggerhappy"
-## Customizations
-# Moode DB customizations
-#run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"
-#\""
+	# Run /root/firstboot at first boot, enable verbose boot and set physical boot device
+	run_on_root_dir temp root "sed -i \"s|root=[^ ]*|root=/dev/mmcblk0p2|;s|init=/usr/lib/raspi-config/init_resize.sh|init=/root/firstboot|;s| quiet||\" /boot/cmdline.txt"
+	# Users and groups
+	run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"MediaPlayer Daemon\" -d /var/lib/mpd mpd || true"
+	run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -G audio -c \"AirPlay Daemon\" -d /var/lib/shairport-sync shairport-sync || true"
+	run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"UPnP Media Renderer Client\" -d /var/lib/upmpdcli upmpdcli || true"
+	run_on_root_dir temp root "useradd -r -M -s /usr/bin/nologin -c \"MiniDLNA server\" -d /var/lib/minidlna minidlna || true"
+	run_on_root_dir temp root "echo "pi:moodeaudio" | chpasswd"
+	# File permissions
+	run_on_root_dir temp root "chown root:plugdev /usr/bin/udevil"
+	#run_on_root_dir temp root "chown root:netdev /etc/dhcpcd.conf"
+	run_on_root_dir temp root "chown -R pi:pi /home/pi"
+	run_on_root_dir temp root "chown www-data:www-data /var/local/php"
+	run_on_root_dir temp root "chown -R mpd:audio /var/lib/mpd"
+	run_on_root_dir temp root "chown -R mpd:audio /var/log/mpd"
+	run_on_root_dir temp root "chown mpd:audio /etc/mpd.conf"
+	run_on_root_dir temp root "chown mpd:audio /run/mpd"
+	run_on_root_dir temp root "chown minidlna:minidlna /var/cache/minidlna"
+	run_on_root_dir temp root "chown minidlna:minidlna /var/lib/minidlna"
+	# Start-up configuration
+	#run_on_root_dir temp root "rm -f /etc/modprobe.d/blacklist-rtl8192cu.conf || true"
+	run_on_root_dir temp root "touch /boot/ssh"
+	run_on_root_dir temp root "sed -i \"s| quiet.*||;s|^|net.ifnames=0 |\" /boot/cmdline.txt"
+	run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hostname"
+	run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hosts"
+	run_on_root_dir temp root "sed -i \"/hosts:/ s/$/ wins mdns4/\" /etc/nsswitch.conf"
+	run_on_root_dir temp root "sed -i \"s/allowed_users=console/allowed_users=anybody/\" /etc/X11/Xwrapper.config"
+	run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
+	run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
+	run_on_root_dir temp root "dphys-swapfile swapoff"
+	run_on_root_dir temp root "dphys-swapfile uninstall"
+	run_on_root_dir temp root "systemctl disable dphys-swapfile"
+	run_on_root_dir temp root "[ -d /var/www/html ] && rm -r /var/www/html || true"
+	run_on_root_dir temp root "rm /etc/update-motd.d/10-uname || true"
+	run_on_root_dir temp root "sudo rm /etc/motd || true"
+	#run_on_root_dir temp root "rm /var/lib/dhcpcd5/*"
+	# Start-up services
+	#run_on_root_dir temp root "systemctl daemon-reload"
+	run_on_root_dir temp root "systemctl set-default multi-user.target"
+	run_on_root_dir temp root "systemctl disable cron.service"
+	run_on_root_dir temp root "systemctl enable rpcbind"
+	run_on_root_dir temp root "systemctl stop apt-daily.timer"
+	run_on_root_dir temp root "systemctl disable apt-daily.timer"
+	run_on_root_dir temp root "systemctl mask apt-daily.timer"
+	run_on_root_dir temp root "systemctl stop apt-daily-upgrade.timer"
+	run_on_root_dir temp root "systemctl disable apt-daily-upgrade.timer"
+	run_on_root_dir temp root "systemctl mask apt-daily-upgrade.timer"
+	run_on_root_dir temp root "systemctl enable haveged"
+	run_on_root_dir temp root "systemctl disable shellinabox"
+	run_on_root_dir temp root "systemctl disable phpsessionclean.service"
+	run_on_root_dir temp root "systemctl disable phpsessionclean.timer"
+	run_on_root_dir temp root "systemctl disable hostapd"
+	run_on_root_dir temp root "systemctl disable dnsmasq"
+	run_on_root_dir temp root "systemctl disable bluetooth.service"
+	run_on_root_dir temp root "systemctl disable hciuart.service"
+	run_on_root_dir temp root "systemctl disable bluealsa"
+	run_on_root_dir temp root "systemctl disable mpd.service"
+	run_on_root_dir temp root "systemctl disable mpd.socket"
+	run_on_root_dir temp root "systemctl disable rotenc.service"
+	run_on_root_dir temp root "systemctl disable squeezelite"
+	run_on_root_dir temp root "systemctl disable upmpdcli.service"
+	run_on_root_dir temp root "systemctl disable minidlna"
+	run_on_root_dir temp root "systemctl disable upmpdcli"
+	run_on_root_dir temp root "systemctl disable localui"
+	run_on_root_dir temp root "systemctl disable udisks2"
+	run_on_root_dir temp root "systemctl disable triggerhappy"
+	## Customizations
+	# Moode DB customizations
+	#run_on_root_dir temp root "sqlite3 /var/local/www/db/moode-sqlite3.db \"
+	#\""
 
-# Create firstboot script
-run_on_root_dir temp root "cat <<-EOF > /root/firstboot
-	#!/bin/sh
-	export PATH=/usr/sbin:/usr/bin:/sbin:/bin
-	date -s \"@$(date +%s)\"
-	mkdir /dev/pts
-	mount -t devpts devpts /dev/pts
-	mount -t proc proc /proc
-	mount -t sysfs sys /sys
-	mount -t tmpfs tmp /run
-	mkdir -p /run/systemd
-	mount -oremount,rw /dev/mmcblk0p2 /
-	mount /dev/mmcblk0p1 /boot
+	# Create firstboot script
+	run_on_root_dir temp root "cat <<-EOF > /root/firstboot
+		#!/bin/sh
+		export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+		date -s \"@$(date +%s)\"
+		mkdir /dev/pts
+		mount -t devpts devpts /dev/pts
+		mount -t proc proc /proc
+		mount -t sysfs sys /sys
+		mount -t tmpfs tmp /run
+		mkdir -p /run/systemd
+		mount -oremount,rw /dev/mmcblk0p2 /
+		mount /dev/mmcblk0p1 /boot
 
-	# AlsaEqual
-	rm /usr/share/alsa/alsa.conf.d/equal.conf
-	amixer -D alsaequal
-	chmod 0755 /usr/local/bin/alsaequal.bin
-	chown mpd:audio /usr/local/bin/alsaequal.bin
+		# AlsaEqual
+		rm /usr/share/alsa/alsa.conf.d/equal.conf
+		amixer -D alsaequal
+		chmod 0755 /usr/local/bin/alsaequal.bin
+		chown mpd:audio /usr/local/bin/alsaequal.bin
 
-	# MPD configuration
-	#su - mpd -c \"/usr/bin/mpd /etc/mpd.conf\"
-	#su - mpd -c \"/usr/bin/mpc enable only 1\"
-	#su - mpd -c \"/usr/bin/mpc update\"
-	#su - mpd -c \"/usr/bin/mpd --kill /etc/mpd.conf\"
+		# MPD configuration
+		#su - mpd -c \"/usr/bin/mpd /etc/mpd.conf\"
+		#su - mpd -c \"/usr/bin/mpc enable only 1\"
+		#su - mpd -c \"/usr/bin/mpc update\"
+		#su - mpd -c \"/usr/bin/mpd --kill /etc/mpd.conf\"
 
-	#revert to normal boot
-	sed -i \" s|init=/root/firstboot||\" /boot/cmdline.txt
+		#revert to normal boot
+		sed -i \" s|init=/root/firstboot||\" /boot/cmdline.txt
 
-	umount /boot
-	mount -oremount,ro /dev/mmcblk0p2 /
+		umount /boot
+		mount -oremount,ro /dev/mmcblk0p2 /
 
-	sleep 10
-	echo b > /proc/sysrq-trigger
-	exit 0
-EOF"
-run_on_root_dir temp root "chmod +x /root/firstboot"
+		sleep 10
+		echo b > /proc/sysrq-trigger
+		exit 0
+	EOF"
+	run_on_root_dir temp root "chmod +x /root/firstboot"
 
-[ -f ~/moodecfg.ini ] && inject_into_mount_tag temp ~/moodecfg.ini /boot || true
+	[ -f ~/moodecfg.ini ] && inject_into_mount_tag temp ~/moodecfg.ini /boot || true
 
-# Uncomment it to navigate in the temp filesystem
-#read -p "Press [Enter] key to carry on..."
+	# Uncomment it to navigate in the temp filesystem
+	#read -p "Press [Enter] key to carry on..."
 
-unmount_tag --finalize temp
+	unmount_tag --finalize temp
+fi
