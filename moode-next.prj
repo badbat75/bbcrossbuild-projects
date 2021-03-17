@@ -111,6 +111,8 @@ build firmwares/broadcom-bt-firmware-master
 #
 # FINAL - Clean up
 
+build raspbian/alsaequal_0.6-8
+build raspbian/bs2b-ladspa_0.9.1-3
 build raspbian/sox_14.4.2+git20190427-2
 build raspbian/flac_1.3.3-2
 
@@ -128,11 +130,10 @@ then
 	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 		php-fpm nginx sqlite3 php-sqlite3 php7.3-gd php-yaml \
-		bs2b-ladspa libbs2b0 libasound2-plugin-equal \
 		\
 		telnet sysstat squashfs-tools shellinabox \
 		samba smbclient exfat-fuse inotify-tools ffmpeg \
-		avahi-utils winbind libnss-winbind djmount haveged xfsprogs zip id3v2\
+		avahi-utils winbind libnss-winbind djmount haveged xfsprogs zip id3v2 \
 		udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
 		\
 		libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
