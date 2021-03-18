@@ -1,7 +1,7 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r701
-#MOODEDEVCOMMIT=90a69de4e7f0d238488fb5738936fdd43b7d6b89
+MOODEREL=r710
+#MOODEDEVCOMMIT=e6f6f8daed5c90bb65d029ea6b06de2215fd3343
 RASPBIAN_IMAGE=2021-01-11-raspios-buster-armhf-lite
 RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/
 
@@ -75,6 +75,7 @@ build moode/mpd_0.22
 build moode/mpc_0.33
 
 # STEP 9a - Eq2Fa12p
+build raspbian/alsaequal_0.6-8
 build moode/caps_0.9.26-eqfa12p+22ef349
 
 # STEP 9b - CamillaDSP and alsa_cdsp
@@ -82,7 +83,7 @@ build moode/camilladsp-0.5.0
 build moode/alsa-cdsp+bbf06dd
 
 # COMPONENT 1 - MiniDLNA
-build moode/minidlna_1.2.1+git076371
+build moode/minidlna_1.3.0
 
 # COMPONENT 2 - Auto-shuffle
 build moode/ashuffle_3.11
@@ -99,8 +100,7 @@ build moode/squeezelite_master+cfab656
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.5
 build moode/libupnpp-bindings_0.20
-build moode/libupnppsamples_moode
-#build moode/libupnppsamples_master+2a6e7a
+#build moode/libupnppsamples_moode
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
 build firmwares/allo-piano-firmware-master
@@ -111,7 +111,6 @@ build firmwares/broadcom-bt-firmware-master
 #
 # FINAL - Clean up
 
-build raspbian/alsaequal_0.6-8
 build raspbian/bs2b-ladspa_0.9.1-3
 build raspbian/sox_14.4.2+git20190427-2
 build raspbian/flac_1.3.3-2
