@@ -14,31 +14,31 @@ LTOENABLE=1
 KERN_LTOENABLE=0
 
 mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
-run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
-run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
-run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
-run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
-	libc6-dev libpython3-dev libsqlite3-dev \
-	libortp-dev libasound2-dev \
-	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
-	libbsd-dev libncurses5-dev libsndfile1-dev \
-	\
-	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev \
-	libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
-	libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
-	\
-	libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
-	libsamplerate0-dev libtwolame-dev libogg-dev \
-	\
-	libpopt-dev libavahi-client-dev libssl-dev \
-	libexpat1-dev libxml2-dev libxslt1-dev \
-	libjpeg62-turbo-dev \
-	\
-	libpython3-dev swig \
-	\
-	zlib1g-dev libbz2-dev liblzma-dev"
-run_on_root_dir distos root "apt-get clean"
-prepare_sysroot
+#run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
+#run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
+#run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+#run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+#	libc6-dev libpython3-dev libsqlite3-dev \
+#	libortp-dev libasound2-dev \
+#	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
+#	libbsd-dev libncurses5-dev libsndfile1-dev \
+#	\
+#	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev \
+#	libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
+#	libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+#	\
+#	libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
+#	libsamplerate0-dev libtwolame-dev libogg-dev \
+#	\
+#	libpopt-dev libavahi-client-dev libssl-dev \
+#	libexpat1-dev libxml2-dev libxslt1-dev \
+#	libjpeg62-turbo-dev \
+#	\
+#	libpython3-dev swig \
+#	\
+#	zlib1g-dev libbz2-dev liblzma-dev"
+#run_on_root_dir distos root "apt-get clean"
+#prepare_sysroot
 
 #create_sysroot http://<url>/<rootfs.tar.gz>
 setup_gcc
@@ -68,7 +68,7 @@ build raspbian/udevil_0.4.4-2
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/bluez_5.56
 build raspberrypi/pi-bluetooth_0.1.15+63b706a
-WITH_APTX=openaptx build moode/bluez-alsa_3.0.0+cbe95ae
+WITH_APTX=libopenaptx build moode/bluez-alsa_3.0.0+cbe95ae
 
 # STEP 6 - Compile and install MPD
 build moode/mpd_0.22
@@ -81,6 +81,8 @@ build moode/caps_0.9.26-eqfa12p+22ef349
 # STEP 9b - CamillaDSP and alsa_cdsp
 build moode/camilladsp-0.5.0
 build moode/alsa-cdsp+bbf06dd
+
+#build python/numpy_1.20.1
 
 # COMPONENT 1 - MiniDLNA
 build moode/minidlna_1.3.0
