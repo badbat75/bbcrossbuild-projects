@@ -14,36 +14,38 @@ LTOENABLE=1
 KERN_LTOENABLE=0
 
 mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
-#run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
-#run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
-#run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
-#run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
-#	libc6-dev libpython3-dev libsqlite3-dev \
-#	libortp-dev libasound2-dev \
-#	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
-#	libbsd-dev libncurses5-dev libsndfile1-dev \
-#	\
-#	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev \
-#	libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
-#	libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
-#	\
-#	libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
-#	libsamplerate0-dev libtwolame-dev libogg-dev \
-#	\
-#	libpopt-dev libavahi-client-dev libssl-dev \
-#	libexpat1-dev libxml2-dev libxslt1-dev \
-#	libjpeg62-turbo-dev \
-#	\
-#	libpython3-dev swig \
-#	\
-#	zlib1g-dev libbz2-dev liblzma-dev"
-#run_on_root_dir distos root "apt-get clean"
-#prepare_sysroot
+run_on_root_dir distos root "apt-get -y purge --autoremove bluez wpasupplicant iw libnl-3-200 libnl-route-3-200"
+run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
+run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+	libc6-dev libpython3-dev libsqlite3-dev \
+	libortp-dev libasound2-dev \
+	libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
+	libbsd-dev libncurses5-dev libsndfile1-dev \
+	\
+	libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libopusfile-dev libaudiofile-dev libfaad-dev \
+	libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
+	libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
+	\
+	libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
+	libsamplerate0-dev libtwolame-dev libogg-dev \
+	\
+	libpopt-dev libavahi-client-dev libssl-dev \
+	libexpat1-dev libxml2-dev libxslt1-dev \
+	libjpeg62-turbo-dev \
+	\
+	libpython3-dev swig \
+	\
+	zlib1g-dev libbz2-dev liblzma-dev \
+	\
+	python3-dbus python3-matplotlib python3-aiohttp python3-yaml"
+run_on_root_dir distos root "apt-get clean"
+prepare_sysroot
 
 #create_sysroot http://<url>/<rootfs.tar.gz>
 setup_gcc
 setup_rust
-setup_python
+setup_python 3.7.9
 
 #create_key_sscertificate
 
