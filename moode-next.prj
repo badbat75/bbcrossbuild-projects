@@ -102,7 +102,7 @@ build moode/squeezelite_master+cfab656
 
 # COMPONENT 6 - Upmpdcli
 build moode/upmpdcli_1.5
-build moode/libupnpp-bindings_0.20
+build moode/libupnpp-bindings_0.21
 #build moode/libupnppsamples_moode
 
 # COMPONENT 9 - Allo Piano 2.1 Firmware
