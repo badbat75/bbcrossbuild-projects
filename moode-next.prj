@@ -2,8 +2,8 @@
 
 MOODEREL=r710
 #MOODEDEVCOMMIT=e6f6f8daed5c90bb65d029ea6b06de2215fd3343
-RASPBIAN_IMAGE=2021-01-11-raspios-buster-armhf-lite
-RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-01-12/
+RASPBIAN_IMAGE=2021-03-04-raspios-buster-armhf-lite
+RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-03-25/
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
@@ -68,7 +68,7 @@ build moode/alsacap
 build raspbian/udevil_0.4.4-2
 
 # STEP 4 - Install enhanced networking and bluetooth stack
-build moode/bluez_5.56
+build moode/bluez_5.58
 build raspberrypi/pi-bluetooth_0.1.15+63b706a
 WITH_APTX=libopenaptx build moode/bluez-alsa_3.0.0+cbe95ae
 
