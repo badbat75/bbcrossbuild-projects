@@ -6,6 +6,6 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
-bootstrap_sysroot linux/rpi-kernel_5.10 development/glibc_2.33 development/libxcrypt_4.4.17
+bootstrap_sysroot raspberrypi/rpi-kernel_5.12 lfs/glibc_2.33 lfs/libxcrypt_4.4.17
 
 #clean_project
