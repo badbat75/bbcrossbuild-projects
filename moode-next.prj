@@ -1,7 +1,7 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r720
-#MOODEDEVCOMMIT=e6f6f8daed5c90bb65d029ea6b06de2215fd3343
+MOODEREL=r721
+#MOODEDEVCOMMIT=8dbf2cfbfc09bdf679e5085409a6f4cb9e1ca64e
 RASPBIAN_IMAGE=2021-03-04-raspios-buster-armhf-lite
 RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-03-25/
 
@@ -60,7 +60,7 @@ build raspbian/iw_5.9-3
 build moode/wireless-regdb_2020-11-20
 build raspbian/wpa_supplicant_2.9.0
 build raspbian/hostapd_2.9.0
-build moode/mediainfo_20.09
+build moode/mediainfo_21.03
 build moode/alsacap
 
 # USB mounter
@@ -70,7 +70,7 @@ build raspbian/udevil_0.4.4-2
 # STEP 4 - Install enhanced networking and bluetooth stack
 build moode/bluez_5.58
 build raspberrypi/pi-bluetooth_0.1.15+63b706a
-WITH_APTX=libopenaptx build moode/bluez-alsa_3.0.0+04d9043
+WITH_APTX=libopenaptx build moode/bluez-alsa_3.0.0+9923760
 
 # STEP 6 - Compile and install MPD
 build moode/mpd_0.22
@@ -95,7 +95,7 @@ build moode/ashuffle_3.11
 WITH_ALAC=1 build moode/shairport-sync_3.3.8
 
 # COMPONENT 4B - Librespot
-build moode/librespot_0.1.6
+build moode/librespot_0.2.0
 
 # COMPONENT 5 - Squeezelite
 build moode/squeezelite_master+cfab656
