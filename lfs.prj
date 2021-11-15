@@ -11,14 +11,14 @@ build lfs/create-base-config_1.0
 
 mkdir -p ${USERDATA_PATH}/postinstall
 
-bootstrap_sysroot raspberrypi/rpi-kernel_5.10 lfs/glibc_2.33 lfs/libxcrypt_4.4.17
+bootstrap_sysroot raspberrypi/rpi-kernel_5.15 lfs/glibc_2.34 lfs/libxcrypt_4.4.26
 
 install_gcclibs
 
-build raspberrypi/rpi-firmware_1.20210201
-build firmwares/linux-firmware_20210208
-build raspberrypi/rpi-kernel_5.10
-build lfs/glibc_2.33
+build raspberrypi/rpi-firmware_1.20211007
+build firmwares/linux-firmware_20210511
+build raspberrypi/rpi-kernel_5.15
+build lfs/glibc_2.34
 build lfs/tzdata_2021a
 build lfs/man-pages_5.10
 build lfs/iana-etc_20210202
@@ -75,14 +75,14 @@ build lfs/dosfstools_4.2
 build lfs/sudo_1.9.5p2
 build lfs/openssh_8.4p1
 ### System Utilities
-build raspberrypi/pi-bluetooth_0.1.15+63b706a
+build raspberrypi/pi-bluetooth_0.1.17
 build lfs/bluez_5.55
 build lfs/usb-utils_013
 #build lfs/pciutils_5.7.0
 build lfs/lsof_4.91
 ### Network
 build lfs/dhcp_4.4.2
-build firmwares/wireless-regdb_2020.11.20
+build firmwares/wireless-regdb_2021.08.28
 build lfs/wpa_supplicant_2.9.0
 build lfs/iw_5.9
 build lfs/wireless-tools_29
