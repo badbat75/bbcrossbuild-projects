@@ -1,7 +1,7 @@
 # Build recipe for moode mediacenter
 
-MOODEREL=r750
-#MOODEDEVCOMMIT=a4b908dfe3c1a60adc0f2403f4560b2bdcb3ac9d
+MOODEREL=r761
+MOODEDEVCOMMIT=86003235434f47fcf48fd46dd71d227cfcaa5c78
 RASPBIAN_IMAGE=2021-10-30-raspios-bullseye-armhf-lite
 RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2021-11-08/
 
@@ -13,25 +13,26 @@ BUILD_LIBSTATIC=0
 LTOENABLE=1
 KERN_LTOENABLE=0
 
+## Set default sysroot pkg-config library path
+PKG_CONFIG_SYSROOT_DIR=${BIN_PATH}
+
 mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
 if [ -z ${SKIP_DISTOS_APTS} ]
 then
-	run_on_root_dir distos root "apt-get -y purge --autoremove raspberrypi-kernel firmware-* RPi.GPIO \
-		bluez wpasupplicant iw htop libnl-3-200 libcamera-apps-lite libsource-highlight4v5"
+	run_on_root_dir distos root "apt-get -y purge --autoremove raspberrypi-kernel rpi-eeprom firmware-* \
+		libasound2 bluez wpasupplicant iw htop libnl-3-200 RPi.GPIO libcamera-apps-lite libsource-highlight4v5 \
+		raspberrypi-sys-mods raspberrypi-net-mods"
 	run_on_root_dir distos root "apt-get update --allow-releaseinfo-change"
 	run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 	run_on_root_dir distos root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
 		libc6-dev libpython3-dev libsqlite3-dev \
-		libasound2-dev \
 		libusb-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-1-dev \
-		libbsd-dev libncurses5-dev libsndfile1-dev \
+		libbsd-dev libncurses5-dev \
 		\
-		libcdio-paranoia-dev libmad0-dev libmpg123-dev libflac-dev libvorbis-dev libopus-dev libaudiofile-dev libfaad-dev \
-		libwavpack-dev libavcodec-dev libavformat-dev libmp3lame-dev libcurl4-gnutls-dev libshout3-dev libyajl-dev \
+		libcurl4-gnutls-dev libyajl-dev \
 		libavahi-client-dev libsystemd-dev libwrap0-dev libicu-dev libglib2.0-dev \
 		\
-		libao-dev libgsm1-dev libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev libpulse-dev \
-		libsamplerate0-dev libtwolame-dev libogg-dev \
+		libltdl3-dev libmagic-dev libopencore-amrnb-dev libopencore-amrwb-dev libpng-dev \
 		\
 		libpopt-dev libavahi-client-dev libssl-dev \
 		libexpat1-dev libxml2-dev libxslt1-dev \
@@ -52,10 +53,17 @@ setup_rust
 setup_python 3.9.8
 
 #create_key_sscertificate
+generate_ssh_keys --install binaries
 
 #clean_project
 
+##### RaspberryPi Packages
 KEEP_BUILDDIR=1 build raspberrypi/rpi-kernel_5.15
+#####
+build raspberrypi/raspi-config
+build raspberrypi/raspberrypi-sys-mods_20211005
+build raspberrypi/raspberrypi-net-mods_20211104
+build moode/alsa-utils_1.2.5.1
 
 # Download and install moode-sources and pre-build environment
 build moode/moode-dynamic-ver_1.2
@@ -96,6 +104,7 @@ build moode/minidlna_1.3.0
 build moode/ashuffle_3.12
 
 # COMPONENT 4A - Shairport-sync
+#WITH_ALAC=1 build moode/shairport-sync_4.1
 WITH_ALAC=1 build moode/shairport-sync_3.3.8
 
 # COMPONENT 4B - Librespot
@@ -129,28 +138,33 @@ if [ -z ${DISABLE_FINAL_IMG} ]
 then
 	mount_tag temp --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
 
-	run_on_root_dir temp root "apt-get -y purge --autoremove gcc-10 build-essential libc6-dev raspberrypi-kernel RPi.GPIO bluez \
-		wpasupplicant iw htop libnl-3-200 libcamera-apps-lite libsource-highlight4v5"
+	run_on_root_dir temp root "apt-get -y purge --autoremove raspberrypi-kernel libraspberrypi-dev \
+		gcc-10 build-essential libc6-dev dpkg-dev manpages-dev initramfs-tools-core RPi.GPIO bluez \
+		wpasupplicant iw htop libnl-3-200 libcamera-apps-lite libsource-highlight4v5 \
+		libasound2 raspberrypi-sys-mods raspberrypi-net-mods"
 	run_on_root_dir temp root "apt-get update --allow-releaseinfo-change"
 	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade"
 	run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+		triggerhappy \
 		php-fpm nginx sqlite3 php-sqlite3 php7.4-gd php-yaml \
 		\
 		telnet sysstat squashfs-tools shellinabox \
-		samba smbclient exfat-fuse inotify-tools ffmpeg \
-		avahi-utils winbind libnss-winbind djmount haveged xfsprogs zip id3v2 \
+		samba smbclient exfat-fuse inotify-tools \
+		avahi-utils winbind libnss-winbind djmount xfsprogs id3v2 \
 		udisks2 libatasmart4 libdbus-glib-1-2 libgudev-1.0-0 libsgutils2-2 libdevmapper-event1.02.1 \
 		\
-		libyajl2 libshout3 libfaad2 libmad0 libavahi-client3 libcurl3-gnutls \
+		libyajl2 libavahi-client3 libcurl3-gnutls \
 		\
 		dnsmasq \
 		\
 		expect \
 		\
-		xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2 \
-		\
 		python3-dbus python3-matplotlib python3-aiohttp python3-yaml"
-
+	if [ ${ENABLE_DISPLAY:-0} -eq 1 ]
+	then
+		run_on_root_dir temp root "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+			xinit xorg xserver-xorg-legacy chromium-browser libgtk-3-0 libgles2"
+	fi
 	run_on_root_dir temp root "apt-get -y purge --autoremove libcephfs2"
 	run_on_root_dir temp root "apt-get clean"
 
@@ -184,7 +198,10 @@ then
 	run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hostname"
 	run_on_root_dir temp root "sed -i \"s/raspberrypi/moode/\" /etc/hosts"
 	run_on_root_dir temp root "sed -i \"/hosts:/ s/$/ wins mdns4/\" /etc/nsswitch.conf"
-	run_on_root_dir temp root "sed -i \"s/allowed_users=console/allowed_users=anybody/\" /etc/X11/Xwrapper.config"
+	if [ ${ENABLE_DISPLAY:-0} -eq 1 ]
+	then
+		run_on_root_dir temp root "sed -i \"s/allowed_users=console/allowed_users=anybody/\" /etc/X11/Xwrapper.config"
+	fi
 	run_on_root_dir temp root "rm /etc/init.d/resize2fs_once || true"
 	run_on_root_dir temp root "cp -p /usr/share/zoneinfo/America/Detroit /etc/localtime"
 	run_on_root_dir temp root "dphys-swapfile swapoff"
@@ -205,7 +222,7 @@ then
 	run_on_root_dir temp root "systemctl stop apt-daily-upgrade.timer"
 	run_on_root_dir temp root "systemctl disable apt-daily-upgrade.timer"
 	run_on_root_dir temp root "systemctl mask apt-daily-upgrade.timer"
-	run_on_root_dir temp root "systemctl enable haveged"
+	#run_on_root_dir temp root "systemctl enable haveged"
 	run_on_root_dir temp root "systemctl disable shellinabox"
 	run_on_root_dir temp root "systemctl disable phpsessionclean.service"
 	run_on_root_dir temp root "systemctl disable phpsessionclean.timer"
@@ -266,11 +283,22 @@ then
 		exit 0
 	EOF"
 	run_on_root_dir temp root "chmod +x /root/firstboot"
+	case x${PLATFORM_NAME} in
+		xrpi)
+			run_on_root_dir temp root "cat >>/boot/config.txt <<-EOF
+				arm_freq=800
+				cpu_freq=275
+			EOF"
+		;;
+	esac
+	run_on_root_dir temp root "systemctl disable regenerate_ssh_host_keys"
+	run_on_root_dir temp root "systemctl enable ssh"
+	run_on_root_dir temp root "chown upmpdcli /var/cache/upmpdcli/ohcreds/credkey.pem"
 
 	[ -f ~/moodecfg.ini ] && inject_into_mount_tag temp ~/moodecfg.ini /boot || true
 
 	# Uncomment it to navigate in the temp filesystem
-	#read -p "Press [Enter] key to carry on..."
+	#pause
 
 	unmount_tag --finalize temp
 fi
