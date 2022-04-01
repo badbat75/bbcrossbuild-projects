@@ -4,18 +4,16 @@ BUILD_LIBSTATIC=0
 
 ## Enable LTO both for kernel and applications
 LTOENABLE=1
-KERN_LTOENABLE=0
+KERNEL_LTOENABLE=0
 
 build lfs/create-base-fs_1.0
 build lfs/create-base-config_1.0
 
 mkdir -p ${USERDATA_PATH}/postinstall
 
-bootstrap_sysroot raspberrypi/rpi-kernel_5.15 lfs/glibc_2.34 lfs/libxcrypt_4.4.26
+setup_gcc --install
 
-install_gcclibs
-
-build raspberrypi/rpi-firmware_1.20211007
+build raspberrypi/rpi-firmware_1
 build firmwares/linux-firmware_20210511
 build raspberrypi/rpi-kernel_5.15
 build lfs/glibc_2.34
@@ -75,14 +73,14 @@ build lfs/dosfstools_4.2
 build lfs/sudo_1.9.5p2
 build lfs/openssh_8.4p1
 ### System Utilities
-build raspberrypi/pi-bluetooth_0.1.17
+build raspberrypi/pi-bluetooth
 build lfs/bluez_5.55
 build lfs/usb-utils_013
 #build lfs/pciutils_5.7.0
 build lfs/lsof_4.91
 ### Network
 build lfs/dhcp_4.4.2
-build firmwares/wireless-regdb_2021.08.28
+build firmwares/wireless-regdb
 build lfs/wpa_supplicant_2.9.0
 build lfs/iw_5.9
 build lfs/wireless-tools_29
@@ -132,7 +130,7 @@ chmod +x ${BIN_PATH}/root/postinstall
 ############################
 
 function build_lfs_image () {
-	create_image lfs --rootfstype btrfs --size 3MiB
+	create_image lfs --rootfstype btrfs --size 3G
 	mount_tag lfs --mountlist "2:/ 1:/boot"
 	inject_into_mount_tag lfs binaries --remove_devfiles
 	run_on_root_dir lfs root "/root/postinstall"

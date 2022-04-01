@@ -1,16 +1,14 @@
 ## Set Clang as default compiler set
-TOOLCHAIN=llvm
+TOOLCHAIN=gnu
 
 ## Enable LTO both for kernel and applications
-LTOENABLE=thin
-KERNEL_LTOENABLE=thin
+LTOENABLE=1
+KERNEL_LTOENABLE=0
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
-BUILD_LIBSTATIC=0
-
-LLVM_POLLY_FEATURES=all
+BUILD_LIBSTATIC=1
 
 setup_gcc --install
-setup_llvm
-raspberrypi/rpi-kernel_5.16
+#setup_llvm
+build microsoft/wsl-kernel_5.10

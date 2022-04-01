@@ -1,11 +1,12 @@
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
-BUILD_LIBSTATIC=0
+BUILD_LIBSTATIC=1
 
 ## Enable LTO both for kernel and applications
 LTOENABLE=1
-KERN_LTOENABLE=0
+GCC_LTOENABLE=1
 
-bootstrap_sysroot raspberrypi/rpi-kernel_5.15 lfs/glibc_2.34 lfs/libxcrypt_4.4.26
+setup_gcc
+setup_llvm
 
 #clean_project
