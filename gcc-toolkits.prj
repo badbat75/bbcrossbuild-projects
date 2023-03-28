@@ -6,7 +6,6 @@ BUILD_LIBSTATIC=1
 LTOENABLE=1
 GCC_LTOENABLE=1
 
-setup_gcc
-setup_llvm
+setup_full_toolchain
 
 #clean_project

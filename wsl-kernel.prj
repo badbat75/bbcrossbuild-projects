@@ -2,13 +2,17 @@
 TOOLCHAIN=gnu
 
 ## Enable LTO both for kernel and applications
-LTOENABLE=1
+LTOENABLE=thin
 KERNEL_LTOENABLE=0
 
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
-BUILD_LIBSTATIC=1
+BUILD_LIBSTATIC=0
 
-setup_gcc --install
-#setup_llvm
-build microsoft/wsl-kernel_5.10
+build lfs/create-base-fs_1.0
+
+KERNEL_VER=5.15.74
+setup_full_toolchain
+build microsoft/wsl-kernel_5.15
+
+cp -fv ${BIN_PATH}/boot/vmlinuz* ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}

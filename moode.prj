@@ -2,14 +2,15 @@
 
 case ${PLATFORM_NAME} in
 	rpi|rpi2|rpi3)
-		RASPBIAN_IMAGE=2022-01-28-raspios-bullseye-armhf-lite
-		RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-01-28/
+		RASPBIAN_IMAGE=2022-09-06-raspios-bullseye-armhf-lite
+		RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_armhf/images/raspios_lite_armhf-2022-09-07/
 	;;
 	rpi3-aarch64)
-		RASPBIAN_IMAGE=2022-01-28-raspios-bullseye-arm64-lite
-		RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2022-01-28/
+		RASPBIAN_IMAGE=2022-09-06-raspios-bullseye-arm64-lite
+		RASPBIAN_URL=https://downloads.raspberrypi.org/raspios_lite_arm64/images/raspios_lite_arm64-2022-09-07/
 	;;
 esac
+RASPBIAN_IMAGE_EXT=img.xz
 
 ## Set Clang as default compiler set
 TOOLCHAIN=llvm
@@ -27,7 +28,7 @@ LLVM_POLLY_FEATURES=all
 ## Set default sysroot pkg-config library path
 PKG_CONFIG_SYSROOT_DIR=${BIN_PATH}
 
-mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
+mount_tag distos --url "${RASPBIAN_URL}${RASPBIAN_IMAGE}.${RASPBIAN_IMAGE_EXT}" --imgfile "${RASPBIAN_IMAGE}.img" --mountlist "2:/ 1:/boot" --resize 2:3G
 if [ -z ${SKIP_APTS} ]
 then
 	run_on_root_dir distos root "apt-get -y purge --autoremove raspberrypi-kernel rpi-eeprom firmware-* \
@@ -61,10 +62,8 @@ fi
 prepare_sysroot
 
 #create_sysroot http://<url>/<rootfs.tar.gz>
-setup_gcc
-setup_llvm
-setup_rust
-setup_python 3.9.12
+setup_full_toolchain
+setup_python 3.9.13
 
 #create_key_sscertificate
 generate_ssh_keys --install binaries
@@ -72,34 +71,35 @@ generate_ssh_keys --install binaries
 #clean_project
 #pause
 
-build raspberrypi/rpi-kernel_5.17
-#build raspberrypi/rpi-kernel_5.15 --with_extra_modules moode/ax88179_178a,moode/rtl8812au_5.6.4.2
+#build raspberrypi/rpi-kernel_6.1
+build raspbian/kmod+20220630-3
+build raspberrypi/rpi-kernel_5.15 --with_extra_modules moode/ax88179_178a,moode/rtl8812au_5.6.4.2
 build raspberrypi/raspi-config
 build raspberrypi/raspberrypi-sys-mods
 build raspberrypi/raspberrypi-net-mods
-build moode/alsa-utils_1.2
-build raspbian/iw_5.16-1
+build moode/alsa-utils
+build raspbian/iw_5.19
 build firmwares/wireless-regdb
-build raspbian/hostapd_2.9.0
-build raspbian/wpa_supplicant_2.9.0
-build moode/mediainfo_21.09
+build lfs/hostapd
+build lfs/wpa_supplicant
+build moode/mediainfo_22.06
 build moode/alsacap
 build moode/udisks-glue_1.3.5               	
 build raspbian/udevil_0.4.4-2
 build moode/bluez_5
-build raspberrypi/pi-bluetooth
-WITH_APTX=libopenaptx build moode/bluez-alsa_3
+build raspberrypi/pi-bluetooth_0
+WITH_APTX=libopenaptx build moode/bluez-alsa_4
 build moode/mpd_0.23
 build moode/mpc_0.34
 build raspbian/alsaequal_0.6-8
 build moode/caps_0.9.26-eqfa12p+22ef349
-build moode/camilladsp_0.6.3
+build moode/camilladsp_1
 build moode/alsa-cdsp_1
-build moode/camillagui-backend_0.8.0
+build moode/camillagui-backend_1
 build moode/minidlna_1.3.0
 build moode/ashuffle_3
 WITH_ALAC=1 build moode/shairport-sync_3.3.9
-build moode/librespot_0.3.1
+build moode/librespot_0
 build moode/squeezelite_master
 build moode/upmpdcli_1.5
 build moode/libupnpp-bindings_0.21
@@ -111,7 +111,7 @@ build raspbian/sox_14.4.2+git20190427-2
 build raspbian/flac_1.3.3-2
 build moode/trx_0.6
 build raspbian/haveged_1.9.14-1
-build moode/moode-dynamic-ver_2.0
+build moode/moode_8
 
 # Uncomment it to navigate in the temp filesystem
 # pause
@@ -120,9 +120,9 @@ unmount_tag distos
 
 # Build common final Image to be used to deploy moode
 
-if [ -z ${DISABLE_FINAL_IMG} ]
+if [ -z ${SKIP_FINAL_IMG} ]
 then
-	mount_tag final --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.zip --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
+	mount_tag final --url ${RASPBIAN_URL}${RASPBIAN_IMAGE}.${RASPBIAN_IMAGE_EXT} --imgfile ${RASPBIAN_IMAGE}.img --mountlist "2:/ 1:/boot" --resize 2:3G
 	if [ -z ${SKIP_APTS} ]
 	then
 		run_on_root_dir final root "apt-get -y purge --autoremove raspberrypi-kernel libraspberrypi-dev \
@@ -169,13 +169,14 @@ then
 		mount_tag temp --mountlist "2:/ 1:/boot"
 		echo -n "Copying files..."
 
-		( set -x; sudo rsync -av "${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/final/" "${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/temp" \
+		( set -x; sudo rsync -av "${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/final/" "${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/temp" \
 			-r --exclude dev --exclude proc --exclude tmp --exclude etc/fstab; set +x ) >> ${LOG_PATH}/images_temp.log 2>&1
 		unmount_tag final
 		echo -n "Tuning boot parameters for ${MOODEIMG_FS:-f2fs}..."
-		PARTUUID=$(grep '/ ' ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/temp/etc/fstab | awk '{print $1}')
+		PARTUUID=$(grep '/ ' ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/temp/etc/fstab | awk '{print $1}')
 		run_on_root_dir temp root "sed -i \"s/rootfstype=ext4/rootfstype=${MOODEIMG_FS:-f2fs}/;s/root=PARTUUID=[^ ]*/root=${PARTUUID}/\" /boot/cmdline.txt"
 		run_on_root_dir temp root "systemctl disable resize2fs_once.service"
+		run_on_root_dir temp root "systemctl disable e2scrub_all"
 		echo -n "Installing ${MOODEIMG_FS:-f2fs} utilities..."
 		case ${MOODEIMG_FS:-f2fs} in
 			f2fs)
@@ -244,11 +245,11 @@ if [ -n "${QEMU_MACHINE}" ]
 then
 	echo "Creating QEMU Script for: ${QEMU_MACHINE}"
 	KERNEL=${BIN_PATH}/boot/${KERNEL_NAME}
-	IMAGE=${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.img
+	IMAGE=${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.img
 	QEMU_ARCH=${HM}
 	QEMU_CPU=${HMCPU}
 
-	cat >${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.qemu <<-EOF
+	cat >${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu <<-EOF
 		#!/bin/sh
 
 		qemu-img resize ${IMAGE} 4G
@@ -270,6 +271,6 @@ then
 			-device sd-card,drive=disk0 -drive file=${IMAGE},if=none,format=raw,id=disk0 \\
 			--no-reboot
 	EOF
-	chmod +x ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.qemu
-	echo "Run ${DATA_PATH}/${PRJ_NAME}/${PLATFORM_NAME}/${PRJ_NAME}.qemu to test it!!!"
+	chmod +x ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu
+	echo "Run ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu to test it!!!"
 fi

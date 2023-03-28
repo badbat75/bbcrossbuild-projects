@@ -1,146 +1,305 @@
+if [ -f ${PRJ_PATH}/lfs.conf ]
+then
+	. ${PRJ_PATH}/lfs.conf
+fi
+
+## Sets default values:
+TOOLCHAIN=${LFS_TOOLCHAIN:-gnu}
+LFS_SPLITUSR=${LFS_SPLITUSR:-0}
+LFS_ENABLESSH=${LFS_ENABLESSH:-1}
+LFS_ENABLEDEV=${LFS_ENABLEDEV:-0}
+LFS_HOSTNAME=${LFS_HOSTNAME:-lfs}
+LFS_FSTYPE=${LFS_FSTYPE:-ext4}
+LFS_FSSIZE=${LFS_FSSIZE:-4G}
+LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
+
+echo "Tool chain: ${TOOLCHAIN}"
+echo "Architecture: ${HARCH}"
+echo
+echo "Is ssh enabled: $( [ ${LFS_ENABLESSH} -eq 1 ] && echo yes || no )"
+echo "LFS hostname: ${LFS_HOSTNAME}"
+echo "LFS filesystem type: ${LFS_FSTYPE}"
+if [ ! -x ${LFS_LANDEV} ]
+then
+	echo "LAN device: ${LFS_LANDEV}"
+fi
+if [ ! -x ${LFS_WLANSSID} ] && [ ! -x ${LFS_WLANPSK} ] && [ ! -x ${LFS_WLANDEV} ]
+then
+	echo "WLAN device: ${LFS_WLANDEV}"
+	echo "SSID: ${LFS_WLANSSID}"
+fi
+echo
+
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
 BUILD_LIBSTATIC=0
 
 ## Enable LTO both for kernel and applications
-LTOENABLE=1
-KERNEL_LTOENABLE=0
+LTOENABLE=thin
+KERNEL_LTOENABLE=thin
 
-build lfs/create-base-fs_1.0
-build lfs/create-base-config_1.0
-
-mkdir -p ${USERDATA_PATH}/postinstall
-
-setup_gcc --install
-
-build raspberrypi/rpi-firmware_1
-build firmwares/linux-firmware_20210511
-build raspberrypi/rpi-kernel_5.15
-build lfs/glibc_2.34
-build lfs/tzdata_2021a
-build lfs/man-pages_5.10
-build lfs/iana-etc_20210202
-build lfs/zlib_1.2.11
-build lfs/bzip2_1.0.8
-build lfs/xz_5.2.5
-build lfs/zstd_1.4.8
-build lfs/file_5.39
-build lfs/readline_8.1
-build lfs/bc_1.0.7
-build lfs/gmp_6.2.1
-build lfs/mpfr_4.1.0
-build lfs/attr_2.4.48
-build lfs/acl_2.2.53
-build lfs/libcap_2.47
-build lfs/shadow_4.8.1
-build lfs/sed_4.8
-build lfs/psmisc_23.3
-build lfs/grep_3.6
-build lfs/ncurses_6.2+p20210130
-build lfs/bash_5.1+p4
-build lfs/gdbm_1.19
-build lfs/expat_2.2.10
-build lfs/inetutils_2.0
-build perl/XML::Parser_2.46
-build lfs/perl_5.32.1
-build lfs/intltool_0.51.0
-build lfs/kmod_28
-build lfs/elfutils_0.182
-build lfs/libffi_3.3
-build lfs/openssl_1.1.1i
-build lfs/python_3.9.2 && setup_python
-build lfs/coreutils_8.32
-build lfs/diffutils_3.7
-build lfs/gawk_5.1.0
-build lfs/findutils_4.8.0
-build lfs/groff_1.22.4
-build lfs/less_563
-build lfs/gzip_1.10
-build lfs/iproute2_5.11.0
-build lfs/kbd_2.4.0
-build lfs/libpipeline_1.5.3
-build lfs/man-db_2.9.3
-build lfs/tar_1.33
-build lfs/vim_8.2.2433
-build lfs/systemd_247
-build lfs/D-Bus_1.12.20
-build lfs/procps-ng_3.3.16
-build lfs/util-linux_2.36.2
-build lfs/e2fsprogs_1.46
-build lfs/btrfs-progs_5.10.1
-build lfs/dosfstools_4.2
-### Security
-build lfs/sudo_1.9.5p2
-build lfs/openssh_8.4p1
+### Basic filesystem
+	build lfs/create-base-fs_1.0
+	build lfs/create-base-config_1.0
+### Basic toolchain and core libraries
+	setup_full_toolchain --with-python --with-gnu-install --with-main-gcc
+### Kernel core, boot loaders, utilities and firmwares
+	case ${PLATFORM_NAME} in
+		rpi*)
+			build raspberrypi/rpi-kernel_$( echo ${KERNEL_VER} | cut -d'.' -f1,2 )
+			build raspberrypi/rpi-firmware_1
+			build raspberrypi/pi-bluetooth_0
+		;;
+		*)
+			build lfs/kernel
+			build lfs/GRUB
+		;;
+	esac
+	build lfs/kmod
+	build lfs/dracut
+	build firmwares/linux-firmware
+	build firmwares/wireless-regdb
+### Core Libraries
+	#build lfs/glibc
+	build lfs/tzdata
+	build lfs/shadow
+	build lfs/Linux-PAM
+### Core services
+	build lfs/systemd
+	build lfs/D-Bus
+	build lfs/polkit
+### Minimal
+	build lfs/bash
+	build lfs/man-pages
+	build lfs/man-db
+	build lfs/python3
+	build perl/XML-Parser
+	build lfs/perl5
+### Filesystem progs
+	build lfs/e2fsprogs
+	build lfs/btrfs-progs
+	build lfs/dosfstools
+	build lfs/fuse
+	build lfs/attr
+	build lfs/acl
 ### System Utilities
-build raspberrypi/pi-bluetooth
-build lfs/bluez_5.55
-build lfs/usb-utils_013
-#build lfs/pciutils_5.7.0
-build lfs/lsof_4.91
-### Network
-build lfs/dhcp_4.4.2
-build firmwares/wireless-regdb
-build lfs/wpa_supplicant_2.9.0
-build lfs/iw_5.9
-build lfs/wireless-tools_29
-build lfs/bind_9.16.12
-build lfs/curl_7.75.0
+	build lfs/file
+	build lfs/bc
+	build lfs/sed
+	build lfs/psmisc
+	build lfs/grep
+	build lfs/coreutils
+	build lfs/diffutils
+	build lfs/gawk
+	build lfs/findutils
+	build lfs/groff
+	build lfs/less
+	build lfs/kbd
+	build lfs/tar
+	build lfs/vim
+	build lfs/procps-ng
+	build lfs/util-linux
+	build lfs/elfutils
+	build lfs/usb-utils
+	build lfs/pciutils
+	build lfs/lsof
+	build lfs/which
+	build lfs/intltool
+### Network Utilities
+	build lfs/iana-etc
+	build lfs/inetutils
+	build lfs/net-tools
+	build lfs/iproute2
+	build lfs/curl
+	build lfs/wget2
+	build lfs/tcpdump
+### Wireless
+	build lfs/wpa_supplicant
+	build lfs/hostapd
+	build lfs/iw
+	#build lfs/wireless-tools
+	build lfs/bluez
+### Security
+	build lfs/sudo
+### Network Servers/Clients
+	build lfs/bind9
+	build lfs/dhcp
+	#build lfs/dhcpcd
+	build lfs/openssh
+	build lfs/Avahi
+### X11
+### Multimedia
+	build lfs/alsa-utils
 ### Development
-build lfs/strace_5.10
+	build lfs/strace
+	if [ ${LFS_ENABLEDEV} -eq 1 ]
+	then
+		build lfs/binutils
+		GCC_TARGETS="binaries" build lfs/gcc
+		build lfs/gdb
+		build lfs/make
+		build lfs/bison
+		build lfs/libtool
+		build lfs/autoconf
+		build lfs/automake
+		build lfs/gettext
+		build lfs/pkgconf
+		build lfs/sccache
+		build lfs/cmake
+		build lfs/ninja
+		build lfs/meson
+	else
+		LFS_REMOVE_DEVFILES="--remove_devfiles"
+	fi
 
-### Final configurations ###
-echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-echo "net.ifnames=0 console=tty1 root=/dev/mmcblk0p2 fsck.repair=yes rootwait" >${BIN_PATH}/boot/cmdline.txt
+### Instantiate post_build variables ###
+source "${STATUS_PATH}/system_config"
+########################################
 
-if [ ! -x ${LFS_HOSTNAME} ]
+echo Configuring Host Name: ${LFS_HOSTNAME}
+echo ${LFS_HOSTNAME} > ${BIN_PATH}/etc/hostname
+if ! grep "127.0.1.1" ${BIN_PATH}/etc/hosts > /dev/null
 then
-	echo Configuring Host Name
-	echo ${LFS_HOSTNAME} > ${BIN_PATH}${BUILD_SYSCONFDIR}/hostname
+	echo "127.0.1.1 ${LFS_HOSTNAME}. ${LFS_HOSTNAME}" >> ${BIN_PATH}/etc/hosts
 fi
-if [ ! -x ${WLAN_SSID} ] && [ ! -x ${WLAN_PSK} ] && [ ! -x ${WLAN_DEV} ]
+echo "LANG=en_US.UTF-8" > ${BIN_PATH}/etc/locale.conf
+
+>${BIN_PATH}/postinst_scripts/99-lfs-configurations
+
+if [ -n "${LFS_LANDEV}" ]
 then
-	echo Configuring WiFi
-	wpa_passphrase ${WLAN_SSID} ${WLAN_PSK} > ${BIN_PATH}${BUILD_SYSCONFDIR}/wpa_supplicant/wpa_supplicant-${WLAN_DEV}.conf
-	systemctl --root=${BIN_PATH} enable wpa_supplicant@${WLAN_DEV}
-	cat > ${BIN_PATH}/etc/systemd/network/${WLAN_DEV}.network <<-EOF
+	echo Configuring LAN: ${LFS_LANDEV}
+	cat > ${BIN_PATH}/etc/systemd/network/${LFS_LANDEV}.network <<-EOF
 		[Match]
-		Name=${WLAN_DEV}
-		SSID=${WLAN_SSID}
+		Name=${LFS_LANDEV}
 
 		[Network]
 		DHCP=yes
 	EOF
 	echo
 fi
-if [ x${ENABLE_SSH} != x ]
+
+if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 then
-	echo Enabling SSHd
-	ssh-keygen -A -f ${BIN_PATH}
-	systemctl --root=${BIN_PATH} enable sshd
+	echo Configuring WiFi: ${LFS_WLANDEV}
+	wpa_passphrase ${LFS_WLANSSID} ${LFS_WLANPSK} > ${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf
+	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
+		systemctl enable wpa_supplicant@${LFS_WLANDEV}
+	EOF
+	cat > ${BIN_PATH}/etc/systemd/network/${LFS_WLANDEV}.network <<-EOF
+		[Match]
+		Name=${LFS_WLANDEV}
+		SSID=${LFS_WLANSSID}
+
+		[Network]
+		DHCP=yes
+	EOF
 	echo
 fi
 
-echo "#!/bin/bash" >${BIN_PATH}/root/postinstall
-echo "set -x" >>${BIN_PATH}/root/postinstall
-find ${USERDATA_PATH}/postinstall -name "*.task" -exec cat {} >> ${BIN_PATH}/root/postinstall \;
-echo "rm -f /root/postinstall" >> ${BIN_PATH}/root/postinstall
-echo "set +x" >> ${BIN_PATH}/root/postinstall
-chmod +x ${BIN_PATH}/root/postinstall
-############################
+if [ ${LFS_ENABLESSH} -eq 1 ]
+then
+	echo Enabling SSHd
+	ssh-keygen -A -f ${BIN_PATH}
+	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
+		systemctl enable sshd
+	EOF
+	generate_ssh_keys --install binaries
+	echo
+fi
 
 function build_lfs_image () {
-	create_image lfs --rootfstype btrfs --size 3G
+	set -e
+	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE}
 	mount_tag lfs --mountlist "2:/ 1:/boot"
-	inject_into_mount_tag lfs binaries --remove_devfiles
-	run_on_root_dir lfs root "/root/postinstall"
+
+	### Boot configuration and support scripts
+	echo
+	echo -n "Configuring boot parameters... "
+	LFS_LBROOT="$(findmnt -nu -o SOURCE ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/lfs)"
+	LFS_PARTUUID="$(blkid -o value --match-tag PARTUUID ${LFS_LBROOT})"
+	KERNEL_BOOTPARAMS="root=PARTUUID=${LFS_PARTUUID} rootfstype=${LFS_FSTYPE} fsck.repair=yes rootwait cgroup_enable=memory net.ifnames=0 systemd.gpt_auto=no"
+	INITRAMFS_NAME=initramfs-${KERNEL_RELEASE}.img
+	case ${PLATFORM_NAME} in
+		rpi*)
+			case ${PLATFORM_NAME} in
+				rpi*-aarch64)
+					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
+				;;
+				*)
+					echo "arm_64bit=0" >${BIN_PATH}/boot/config.txt
+				;;
+			esac
+			cat >>${BIN_PATH}/boot/config.txt <<-EOF
+				kernel ${KERNEL_NAME}
+				initramfs ${INITRAMFS_NAME} followkernel
+			EOF
+			cat >${BIN_PATH}/boot/cmdline.txt <<-EOF
+				${KERNEL_BOOTPARAMS}
+			EOF
+		;;
+		generic-x64)
+			cat > ${BIN_PATH}/postinst_scripts/99-lfs-grub-configuration <<-EOF
+				#grub-install --target=x86_64-efi --removable --efi-directory=/boot --boot-directory=/boot
+				grub-install ${LFS_LBROOT/p2/}
+			EOF
+			mkdir -p ${BIN_PATH}/boot/grub
+			cat > ${BIN_PATH}/boot/grub/grub.cfg <<-EOF
+				# Begin /boot/grub/grub.cfg
+				set default=0
+				set timeout=5
+
+				insmod part_gpt
+				insmod ${LFS_FSTYPE}
+				set root=(hd0,1)
+
+				if loadfont /boot/grub/fonts/unicode.pf2; then
+				   set gfxmode=auto
+				   insmod all_video
+				   terminal_output gfxterm
+				fi
+
+				menuentry "GNU/Linux, Linux ${KERNEL_VER}"  {
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro
+				   initrd /${INITRAMFS_NAME}
+				}
+
+				menuentry "GNU/Linux, Linux ${KERNEL_VER} - Serial output"  {
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=ttyS0
+				   initrd /${INITRAMFS_NAME}
+				}
+			EOF
+			ln -s ../boot/grub/grub.cfg /etc/grub.cfg
+		;;
+	esac
+	echo "Done."
+
+	inject_into_mount_tag lfs binaries ${LFS_REMOVE_DEVFILES}
+	run_postinstall_scripts lfs
+	run_cmd "cp -fv ${PLATFORM_PATH}/lfs/boot/${INITRAMFS_NAME} ${BIN_PATH}/boot" >>${LOG_PATH}/images_lfs.log
+
+	run_on_root_dir lfs root "systemctl enable console-getty"
+	run_on_root_dir lfs root "systemctl get-default && systemctl set-default multi-user.target"
+	run_on_root_dir lfs root "systemctl enable systemd-networkd"
+	run_on_root_dir lfs root "systemctl enable systemd-resolved"
+	run_on_root_dir lfs root "systemctl enable systemd-timesyncd"
+	run_on_root_dir lfs root "systemctl mask tmp.mount"
 	run_on_root_dir lfs root "useradd -G wheel -m lfs"
+	#run_on_root_dir lfs root "echo root:changeme | chpasswd"
 	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
-	run_on_root_dir lfs root "pwconv"
+	#pause
 	unmount_tag --finalize lfs
+	utilities/qemu_cmdgen --quiet --batchtype all \
+		--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
+		--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
+		${PROJECT_NAME} ${PLATFORM_NAME} 
+	set +e
 }
 
-build_lfs_image
+case ${LFS_IMAGE} in
+	0|disabled) ;;
+	*) build_lfs_image
+esac
 
 #create_sfx_archive remove_devfiles
 #zip_project remove_devfiles
