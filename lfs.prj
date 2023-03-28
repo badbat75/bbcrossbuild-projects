@@ -269,7 +269,7 @@ function build_lfs_image () {
 				   initrd /${INITRAMFS_NAME}
 				}
 			EOF
-			ln -s ../boot/grub/grub.cfg /etc/grub.cfg
+			ln -fs ../boot/grub/grub.cfg ${BIN_PATH}/etc/grub.cfg
 		;;
 	esac
 	echo "Done."
