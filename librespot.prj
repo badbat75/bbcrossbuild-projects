@@ -1,0 +1,32 @@
+## Set Clang as default compiler set
+TOOLCHAIN=llvm
+
+## Enable LTO both for kernel and applications
+LTOENABLE=thin
+
+## Enable shared libraries (default) but disable static ones
+BUILD_LIBSHARED=1
+BUILD_LIBSTATIC=0
+
+OPTLEVEL=3
+
+#KERNEL_VER=6.1.21
+#GLIBC_VER=2.31
+#BINUTILS_VER=2.35.2
+#GCC_VER=10.2.0
+
+build lfs/create-base-fs_1.0
+
+setup_full_toolchain --with-llvm --with-gnu-install --with-main-gcc --with-python
+build lfs/bash
+build lfs/coreutils
+build lfs/sudo
+build lfs/librespot
+
+if [ ${LIBRESPOT_DIAGS:-0} -eq 1 ]
+then
+    build lfs/curl
+    build lfs/iputils
+    build lfs/net-tools
+    build lfs/inetutils
+fi

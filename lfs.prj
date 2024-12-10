@@ -42,12 +42,16 @@ KERNEL_LTOENABLE=thin
 	build lfs/create-base-fs_1.0
 	build lfs/create-base-config_1.0
 ### Basic toolchain and core libraries
-	setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python
+case ${TOOLCHAIN} in
+	gnu) setup_full_toolchain --with-gnu-install --with-main-gcc --with-python ;;
+	llvm) setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python ;;
+esac
 ### Kernel core, boot loaders, utilities and firmwares
 	case ${PLATFORM_NAME} in
 		rpi*)
 			build raspberrypi/rpi-kernel_$( echo ${KERNEL_VER} | cut -d'.' -f1,2 )
 			build raspberrypi/rpi-firmware_1
+			build raspberrypi/rpi-bluez-firmware
 			build raspberrypi/pi-bluetooth_0
 		;;
 		*)
@@ -146,7 +150,9 @@ KERNEL_LTOENABLE=thin
 	build lfs/font-xfree86-type1
 	build lfs/liberation-fonts-ttf
 	build lfs/liberation-narrow-fonts-ttf
-### Multimedia
+### Gnome
+	build lfs/Cairo
+### Multimediabbbb
 	build lfs/alsa-utils
 ### Development
 	build lfs/strace
@@ -157,6 +163,7 @@ KERNEL_LTOENABLE=thin
 		build lfs/gdb
 		build lfs/make
 		build lfs/bison
+		build lfs/flex
 		build lfs/libtool
 		build lfs/autoconf
 		build lfs/automake
@@ -166,6 +173,7 @@ KERNEL_LTOENABLE=thin
 		build lfs/cmake
 		build lfs/ninja
 		build lfs/meson
+		build lfs/doxygen
 	else
 		LFS_REMOVE_DEVFILES="--remove_devfiles"
 	fi
@@ -313,10 +321,12 @@ function build_lfs_image () {
 	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
 	#pause
 	unmount_tag --finalize lfs
-	utilities/qemu_cmdgen --quiet --batchtype all \
+	if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
+	then	utilities/qemu_cmdgen --quiet --batchtype all \
 		--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
 		--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
-		${PROJECT_NAME} ${PLATFORM_NAME} 
+		${PROJECT_NAME} ${PLATFORM_NAME}
+	fi
 	set +e
 }
 
