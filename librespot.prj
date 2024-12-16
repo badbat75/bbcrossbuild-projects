@@ -9,8 +9,12 @@ BUILD_LIBSHARED=1
 BUILD_LIBSTATIC=0
 
 OPTLEVEL=3
+KERNEL_OPTLEVEL=3
+KERNEL_LTOENABLE=1
 
-KERNEL_VER=6.1.21
+#MAKEVERBOSE=1
+
+KERNEL_VER=6.12.1
 GLIBC_VER=2.31
 #BINUTILS_VER=2.35.2
 #GCC_VER=10.2.0
@@ -18,4 +22,6 @@ GLIBC_VER=2.31
 build lfs/create-base-fs_1.0
 
 setup_full_toolchain --with-llvm --with-gnu-install --with-main-gcc
+build raspberrypi/rpi-kernel_6.12
+build lfs/soxr
 build lfs/librespot

@@ -49,7 +49,7 @@ esac
 ### Kernel core, boot loaders, utilities and firmwares
 	case ${PLATFORM_NAME} in
 		rpi*)
-			build raspberrypi/rpi-kernel_$( echo ${KERNEL_VER} | cut -d'.' -f1,2 )
+			WITH_INITRAMFS=1 WITH_KERNEL_FS=${LFS_FSTYPE} build raspberrypi/rpi-kernel_$( echo ${KERNEL_VER} | cut -d'.' -f1,2 )
 			build raspberrypi/rpi-firmware_1
 			build raspberrypi/rpi-bluez-firmware
 			build raspberrypi/pi-bluetooth_0
@@ -263,7 +263,7 @@ function build_lfs_image () {
 				;;
 			esac
 			cat >>${BIN_PATH}/boot/config.txt <<-EOF
-				kernel ${KERNEL_NAME}
+				kernel ${KERNEL_NAME}-${KERNEL_VER}
 				initramfs ${INITRAMFS_NAME} followkernel
 			EOF
 			cat >${BIN_PATH}/boot/cmdline.txt <<-EOF
