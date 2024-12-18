@@ -1,18 +1,6 @@
-## Set Clang as default compiler set
-TOOLCHAIN=llvm
-
-## Enable LTO both for kernel and applications
-LTOENABLE=thin
-
 ## Enable shared libraries (default) but disable static ones
 BUILD_LIBSHARED=1
 BUILD_LIBSTATIC=0
-
-OPTLEVEL=3
-KERNEL_OPTLEVEL=3
-KERNEL_LTOENABLE=1
-
-#MAKEVERBOSE=1
 
 KERNEL_VER=6.12.1
 GLIBC_VER=2.31

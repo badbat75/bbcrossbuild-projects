@@ -42,10 +42,11 @@ KERNEL_LTOENABLE=thin
 	build lfs/create-base-fs_1.0
 	build lfs/create-base-config_1.0
 ### Basic toolchain and core libraries
-case ${TOOLCHAIN} in
-	gnu) setup_full_toolchain --with-gnu-install --with-main-gcc --with-python ;;
-	llvm) setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python ;;
-esac
+setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python
+#case ${TOOLCHAIN} in
+#	gnu) setup_full_toolchain --with-gnu-install --with-main-gcc --with-python ;;
+#	llvm) setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python ;;
+#esac
 ### Kernel core, boot loaders, utilities and firmwares
 	case ${PLATFORM_NAME} in
 		rpi*)
@@ -319,14 +320,15 @@ function build_lfs_image () {
 	run_on_root_dir lfs root "useradd -G wheel -m lfs"
 	#run_on_root_dir lfs root "echo root:changeme | chpasswd"
 	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
-	#pause
+
 	unmount_tag --finalize lfs
-	if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
-	then	utilities/qemu_cmdgen --quiet --batchtype all \
-		--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
-		--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
-		${PROJECT_NAME} ${PLATFORM_NAME}
-	fi
+	#if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
+	#then
+	#	utilities/qemu_cmdgen --quiet --batchtype all \
+	#	--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
+	#	--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
+	#	${PROJECT_NAME} ${PLATFORM_NAME}
+	#fi
 	set +e
 }
 
