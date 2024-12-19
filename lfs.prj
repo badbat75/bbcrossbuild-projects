@@ -4,13 +4,12 @@ then
 fi
 
 ## Sets default values:
-TOOLCHAIN=${LFS_TOOLCHAIN:-gnu}
 LFS_SPLITUSR=${LFS_SPLITUSR:-0}
 LFS_ENABLESSH=${LFS_ENABLESSH:-1}
 LFS_ENABLEDEV=${LFS_ENABLEDEV:-0}
 LFS_HOSTNAME=${LFS_HOSTNAME:-lfs}
 LFS_FSTYPE=${LFS_FSTYPE:-ext4}
-LFS_FSSIZE=${LFS_FSSIZE:-6G}
+LFS_FSSIZE=${LFS_FSSIZE:-8G}
 LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
 
 echo "Tool chain: ${TOOLCHAIN}"
@@ -322,13 +321,13 @@ function build_lfs_image () {
 	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
 
 	unmount_tag --finalize lfs
-	#if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
-	#then
-	#	utilities/qemu_cmdgen --quiet --batchtype all \
-	#	--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
-	#	--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
-	#	${PROJECT_NAME} ${PLATFORM_NAME}
-	#fi
+	if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
+	then
+		utilities/qemu_cmdgen --quiet --batchtype all \
+			--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
+			--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
+			${PROJECT_NAME} ${PLATFORM_NAME}
+	fi
 	set +e
 }
 
