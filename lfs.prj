@@ -118,8 +118,8 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/wget2
 	build lfs/tcpdump
 ### Wireless
-	build lfs/wpa2:wpa_supplicant
-	build lfs/wpa2:hostapd
+	build lfs/wpa_supplicant
+	build lfs/hostapd
 	build lfs/iw
 	#build lfs/wireless-tools
 	build lfs/bluez
@@ -159,7 +159,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	if [ ${LFS_ENABLEDEV} -eq 1 ]
 	then
 		build lfs/binutils
-		GCC_TARGETS="binaries" build lfs/gcc
+		build lfs/gcc:binaries
 		build lfs/gdb
 		build lfs/make
 		build lfs/bison
