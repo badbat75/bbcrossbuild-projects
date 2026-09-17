@@ -153,6 +153,8 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/liberation-narrow-fonts-ttf
 ### Gnome
 	build lfs/Cairo
+	### The SVG loader of gdk-pixbuf: it links librsvg, which Cairo builds
+	build lfs/glycin:svg
 ### Multimediabbbb
 	build lfs/alsa-utils
 ### Development
