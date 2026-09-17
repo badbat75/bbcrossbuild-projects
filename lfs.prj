@@ -138,6 +138,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/xf86-video-fbdev
 	build lfs/xinit
 	build lfs/Mesa
+	build lfs/OpenCL-ICD-Loader
 	build lfs/mesa-demos
 	build lfs/Xwayland
 	build lfs/encodings
