@@ -265,8 +265,11 @@ function build_lfs_image () {
 					echo "dtoverlay=vc4-kms-v3d" >>${BIN_PATH}/boot/config.txt
 				;;
 			esac
+			### KERNEL_NAME of a platform carries ${KERNEL_VER} unexpanded, the way kernelbuild reads it
+			### when it names the image: one more expansion gives the file the firmware has to find,
+			### where "${KERNEL_NAME}-${KERNEL_VER}" wrote the version twice and the variable once
 			cat >>${BIN_PATH}/boot/config.txt <<-EOF
-				kernel ${KERNEL_NAME}-${KERNEL_VER}
+				kernel $(eval echo "${KERNEL_NAME}")
 				initramfs ${INITRAMFS_NAME} followkernel
 			EOF
 			cat >${BIN_PATH}/boot/cmdline.txt <<-EOF
