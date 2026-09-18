@@ -252,6 +252,10 @@ function build_lfs_image () {
 	case ${PLATFORM_NAME} in
 		rpi*)
 			case ${PLATFORM_NAME} in
+				rpi5-aarch64)
+					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
+					echo "dtoverlay=vc4-kms-v3d-pi5" >>${BIN_PATH}/boot/config.txt
+				;;
 				rpi4-aarch64)
 					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
 					echo "dtoverlay=vc4-kms-v3d-pi4" >>${BIN_PATH}/boot/config.txt
