@@ -11,6 +11,9 @@ LFS_HOSTNAME=${LFS_HOSTNAME:-lfs}
 LFS_FSTYPE=${LFS_FSTYPE:-ext4}
 LFS_FSSIZE=${LFS_FSSIZE:-8G}
 LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
+### DHCP on the wired interface (net.ifnames=0 on the kernel command line names it eth0 on every
+### platform); LFS_LANDEV= in lfs.conf leaves it unconfigured
+LFS_LANDEV=${LFS_LANDEV-eth0}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
@@ -333,6 +336,11 @@ function build_lfs_image () {
 	unmount_tag --finalize lfs
 	if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
 	then
+		### qemu_cmdgen applies the overlays of QEMU_DTBO with fdtoverlay
+		if [ -n "${QEMU_DTBO}" ]
+		then
+			build lfs/dtc:native
+		fi
 		utilities/qemu_cmdgen --quiet --batchtype all \
 			--rootdev PARTUUID=${LFS_PARTUUID} --rootfs ${LFS_FSTYPE} \
 			--savecmd ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/${PROJECT_NAME}.qemu \
