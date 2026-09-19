@@ -199,6 +199,15 @@ echo "LANG=en_US.UTF-8" > ${BIN_PATH}/etc/locale.conf
 
 >${BIN_PATH}/postinst_scripts/99-lfs-configurations
 
+### UseDomains takes the domain name of the DHCP lease (option 15, and the search list of the router
+### advertisements) as the search domain of the link, which is what every other client of the LAN
+### does with it. systemd-networkd ignores it by default, and systemd-resolved needs it for more than
+### the short names: it reserves .local for mDNS and refuses to ask a DNS server anything under it
+### unless the name falls in a domain of the link (dns_scope_good_domain in resolved-dns-scope.c), so
+### a router that serves a domain of its own under .local, as home routers commonly do, had none of
+### its hosts resolvable. With the lease domain there, they answer in about 20 ms through the stub of
+### resolved, its cache included, and nothing has to be configured by hand. The mDNS names keep
+### coming from avahi, which the hosts line of nsswitch asks after DNS through nss-mdns.
 if [ -n "${LFS_LANDEV}" ]
 then
 	echo Configuring LAN: ${LFS_LANDEV}
@@ -208,6 +217,12 @@ then
 
 		[Network]
 		DHCP=yes
+
+		[DHCPv4]
+		UseDomains=yes
+
+		[IPv6AcceptRA]
+		UseDomains=yes
 	EOF
 	echo
 fi
@@ -242,6 +257,12 @@ then
 
 		[Network]
 		DHCP=yes
+
+		[DHCPv4]
+		UseDomains=yes
+
+		[IPv6AcceptRA]
+		UseDomains=yes
 	EOF
 	echo
 fi
@@ -255,16 +276,6 @@ cat > ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d/any.
 	ExecStart=
 	ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any
 EOF
-
-### resolv.conf names the DNS servers of the DHCP lease, the uplink mode of systemd-resolved, and
-### not its 127.0.0.53 stub. The stub refuses every name under .local, which the protocol reserves
-### for mDNS, and nothing in the lease changes that: a router that serves a domain of its own under
-### .local (a common home setup) is then unreachable by name. Asking those servers directly, the
-### hosts line of nsswitch resolves files, then DNS, and mDNS last through nss-mdns and avahi, which
-### is also the fast order: the names of the LAN answer in about 20 ms and a real mDNS name costs
-### one DNS miss more. resolved keeps both files up to date and its tmpfiles line for the symlink is
-### an L!, which creates the stub one only when /etc/resolv.conf is missing: this one survives.
-ln -sfn ../run/systemd/resolve/resolv.conf ${BIN_PATH}/etc/resolv.conf
 
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
