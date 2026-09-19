@@ -14,16 +14,6 @@ LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
 ### DHCP on the wired interface (net.ifnames=0 on the kernel command line names it eth0 on every
 ### platform); LFS_LANDEV= in lfs.conf leaves it unconfigured
 LFS_LANDEV=${LFS_LANDEV-eth0}
-### Domains= of every .network file: the routing domains systemd-resolved gets for those links, a
-### space separated list where every entry starts with ~. It is empty by default and belongs in
-### lfs.conf, because only the LAN knows. What it is for: resolved reserves .local for mDNS and
-### sends nothing under it to a unicast DNS server unless the name falls in a routing domain, so a
-### router that serves a domain of its own under .local (a common home setup) leaves every host of
-### the LAN unreachable by name. Listing that domain, LFS_DNSROUTEDOMAINS='~home.local', fixes it.
-### Prefer it to the wider '~local': that one also sends the .local names nobody answers to DNS and
-### doubles the wait before they fail (10s of mDNS timeout, then the same again). Real mDNS names
-### keep going to avahi, which nsswitch consults before DNS through nss-mdns.
-LFS_DNSROUTEDOMAINS=${LFS_DNSROUTEDOMAINS-}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
@@ -34,10 +24,6 @@ echo "LFS filesystem type: ${LFS_FSTYPE}"
 if [ -n "${LFS_LANDEV}" ]
 then
 	echo "LAN device: ${LFS_LANDEV}"
-fi
-if [ -n "${LFS_DNSROUTEDOMAINS}" ]
-then
-	echo "DNS routing domains: ${LFS_DNSROUTEDOMAINS}"
 fi
 if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 then
@@ -223,10 +209,6 @@ then
 		[Network]
 		DHCP=yes
 	EOF
-	if [ -n "${LFS_DNSROUTEDOMAINS}" ]
-	then
-		echo "Domains=${LFS_DNSROUTEDOMAINS}" >> ${BIN_PATH}/etc/systemd/network/${LFS_LANDEV}.network
-	fi
 	echo
 fi
 
@@ -261,10 +243,6 @@ then
 		[Network]
 		DHCP=yes
 	EOF
-	if [ -n "${LFS_DNSROUTEDOMAINS}" ]
-	then
-		echo "Domains=${LFS_DNSROUTEDOMAINS}" >> ${BIN_PATH}/etc/systemd/network/${LFS_WLANDEV}.network
-	fi
 	echo
 fi
 
@@ -277,6 +255,16 @@ cat > ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d/any.
 	ExecStart=
 	ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any
 EOF
+
+### resolv.conf names the DNS servers of the DHCP lease, the uplink mode of systemd-resolved, and
+### not its 127.0.0.53 stub. The stub refuses every name under .local, which the protocol reserves
+### for mDNS, and nothing in the lease changes that: a router that serves a domain of its own under
+### .local (a common home setup) is then unreachable by name. Asking those servers directly, the
+### hosts line of nsswitch resolves files, then DNS, and mDNS last through nss-mdns and avahi, which
+### is also the fast order: the names of the LAN answer in about 20 ms and a real mDNS name costs
+### one DNS miss more. resolved keeps both files up to date and its tmpfiles line for the symlink is
+### an L!, which creates the stub one only when /etc/resolv.conf is missing: this one survives.
+ln -sfn ../run/systemd/resolve/resolv.conf ${BIN_PATH}/etc/resolv.conf
 
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
