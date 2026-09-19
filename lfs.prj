@@ -213,25 +213,24 @@ fi
 
 if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 then
+	### wpa_passphrase derives the WPA key from the passphrase: the build host has none, the global
+	### toolchain gets one
+	build lfs/wpa_supplicant:native
 	echo Configuring WiFi: ${LFS_WLANDEV}
-	### The PSK is the PBKDF2 of the passphrase over the SSID, what wpa_passphrase prints (the build
-	### host has no wpa_passphrase): the image gets the key, not the passphrase. The values go to
-	### python3 through the environment, not on a command line.
-	LFS_WLANPSKHASH=$( SSID="${LFS_WLANSSID}" PASSPHRASE="${LFS_WLANPSK}" python3 -c \
-		'import hashlib, os; print(hashlib.pbkdf2_hmac("sha1", os.environ["PASSPHRASE"].encode(), os.environ["SSID"].encode(), 4096, 32).hex())' )
-	### LFS_WLANCOUNTRY (ISO 3166 code) sets the regulatory domain: without it the world domain
-	### leaves out the channels some countries add (12 and 13 in Europe)
-	cat > "${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf" <<-EOF
-		ctrl_interface=/run/wpa_supplicant
-		${LFS_WLANCOUNTRY:+country=${LFS_WLANCOUNTRY}}
-
-		network={
-		ssid="${LFS_WLANSSID}"
-		psk=${LFS_WLANPSKHASH}
-		}
-	EOF
+	### The passphrase goes through stdin, not on a command line, and its commented copy (#psk=) is
+	### left out: the image gets the key. LFS_WLANCOUNTRY (ISO 3166 code) sets the regulatory
+	### domain: without it the world domain leaves out the channels some countries add (12 and 13
+	### in Europe).
+	{
+		echo "ctrl_interface=/run/wpa_supplicant"
+		if [ -n "${LFS_WLANCOUNTRY}" ]
+		then
+			echo "country=${LFS_WLANCOUNTRY}"
+		fi
+		echo
+		printf '%s\n' "${LFS_WLANPSK}" | "${GLOBAL_TOOLCHAIN_PATH}/bin/wpa_passphrase" "${LFS_WLANSSID}" | grep -v '^[[:space:]]*#psk='
+	} > "${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf"
 	chmod 600 "${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf"
-	unset LFS_WLANPSKHASH
 	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
 		systemctl enable wpa_supplicant@${LFS_WLANDEV}
 	EOF
