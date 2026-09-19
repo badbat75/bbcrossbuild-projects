@@ -134,6 +134,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	#build lfs/dhcpcd
 	build lfs/openssh
 	build lfs/Avahi
+	build lfs/nss-mdns
 ### X11
 	build lfs/xorg-server
 	build lfs/xf86-input-libinput
