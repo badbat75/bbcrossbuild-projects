@@ -245,6 +245,16 @@ then
 	echo
 fi
 
+### systemd-networkd-wait-online waits for every link networkd manages: with the cable out, or the
+### WiFi out of reach, network-online.target (update-pki.service wants it) failed after two minutes.
+### One link online is enough
+mkdir -p ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d
+cat > ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d/any.conf <<-EOF
+	[Service]
+	ExecStart=
+	ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any
+EOF
+
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
 	echo Enabling SSHd
