@@ -14,6 +14,16 @@ LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
 ### DHCP on the wired interface (net.ifnames=0 on the kernel command line names it eth0 on every
 ### platform); LFS_LANDEV= in lfs.conf leaves it unconfigured
 LFS_LANDEV=${LFS_LANDEV-eth0}
+### Domains= of every .network file: the routing domains systemd-resolved gets for those links, a
+### space separated list where every entry starts with ~. It is empty by default and belongs in
+### lfs.conf, because only the LAN knows. What it is for: resolved reserves .local for mDNS and
+### sends nothing under it to a unicast DNS server unless the name falls in a routing domain, so a
+### router that serves a domain of its own under .local (a common home setup) leaves every host of
+### the LAN unreachable by name. Listing that domain, LFS_DNSROUTEDOMAINS='~home.local', fixes it.
+### Prefer it to the wider '~local': that one also sends the .local names nobody answers to DNS and
+### doubles the wait before they fail (10s of mDNS timeout, then the same again). Real mDNS names
+### keep going to avahi, which nsswitch consults before DNS through nss-mdns.
+LFS_DNSROUTEDOMAINS=${LFS_DNSROUTEDOMAINS-}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
@@ -24,6 +34,10 @@ echo "LFS filesystem type: ${LFS_FSTYPE}"
 if [ -n "${LFS_LANDEV}" ]
 then
 	echo "LAN device: ${LFS_LANDEV}"
+fi
+if [ -n "${LFS_DNSROUTEDOMAINS}" ]
+then
+	echo "DNS routing domains: ${LFS_DNSROUTEDOMAINS}"
 fi
 if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 then
@@ -209,6 +223,10 @@ then
 		[Network]
 		DHCP=yes
 	EOF
+	if [ -n "${LFS_DNSROUTEDOMAINS}" ]
+	then
+		echo "Domains=${LFS_DNSROUTEDOMAINS}" >> ${BIN_PATH}/etc/systemd/network/${LFS_LANDEV}.network
+	fi
 	echo
 fi
 
@@ -243,6 +261,10 @@ then
 		[Network]
 		DHCP=yes
 	EOF
+	if [ -n "${LFS_DNSROUTEDOMAINS}" ]
+	then
+		echo "Domains=${LFS_DNSROUTEDOMAINS}" >> ${BIN_PATH}/etc/systemd/network/${LFS_WLANDEV}.network
+	fi
 	echo
 fi
 
@@ -259,10 +281,11 @@ EOF
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
 	echo Enabling SSHd
-	ssh-keygen -A -f ${BIN_PATH}
 	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
 		systemctl enable sshd
 	EOF
+	### The host keys of the image are the ones of the project data directory, kept across builds so a
+	### reflashed board keeps its ssh identity: generate_ssh_keys writes them there and copies them in
 	generate_ssh_keys --install binaries
 	echo
 fi
