@@ -45,10 +45,6 @@ KERNEL_LTOENABLE=thin
 	build lfs/create-base-config_1.0
 ### Basic toolchain and core libraries
 setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python
-#case ${TOOLCHAIN} in
-#	gnu) setup_full_toolchain --with-gnu-install --with-main-gcc --with-python ;;
-#	llvm) setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python ;;
-#esac
 ### Kernel core, boot loaders, utilities and firmwares
 	case ${PLATFORM_NAME} in
 		rpi*)
@@ -190,104 +186,31 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 source "${STATUS_PATH}/system_config"
 ########################################
 
-echo Configuring Host Name: ${LFS_HOSTNAME}
-echo ${LFS_HOSTNAME} > ${BIN_PATH}/etc/hostname
-if ! grep "127.0.1.1" ${BIN_PATH}/etc/hosts > /dev/null
-then
-	echo "127.0.1.1 ${LFS_HOSTNAME}. ${LFS_HOSTNAME}" >> ${BIN_PATH}/etc/hosts
-fi
-echo "LANG=en_US.UTF-8" > ${BIN_PATH}/etc/locale.conf
+### The configuration of the system being built: osconfig.functions writes the files into the
+### sysroot and the commands that have to run inside the target into its post install script
+set_hostname ${LFS_HOSTNAME}
+set_locale en_US.UTF-8
 
->${BIN_PATH}/postinst_scripts/99-lfs-configurations
-
-### UseDomains takes the domain name of the DHCP lease (option 15, and the search list of the router
-### advertisements) as the search domain of the link, which is what every other client of the LAN
-### does with it. systemd-networkd ignores it by default, and systemd-resolved needs it for more than
-### the short names: it reserves .local for mDNS and refuses to ask a DNS server anything under it
-### unless the name falls in a domain of the link (dns_scope_good_domain in resolved-dns-scope.c), so
-### a router that serves a domain of its own under .local, as home routers commonly do, had none of
-### its hosts resolvable. With the lease domain there, they answer in about 20 ms through the stub of
-### resolved, its cache included, and nothing has to be configured by hand. The mDNS names keep
-### coming from avahi, which the hosts line of nsswitch asks after DNS through nss-mdns.
 if [ -n "${LFS_LANDEV}" ]
 then
-	echo Configuring LAN: ${LFS_LANDEV}
-	cat > ${BIN_PATH}/etc/systemd/network/${LFS_LANDEV}.network <<-EOF
-		[Match]
-		Name=${LFS_LANDEV}
-
-		[Network]
-		DHCP=yes
-
-		[DHCPv4]
-		UseDomains=yes
-
-		[IPv6AcceptRA]
-		UseDomains=yes
-	EOF
-	echo
+	configure_network ${LFS_LANDEV}
 fi
 
 if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 then
-	### wpa_passphrase derives the WPA key from the passphrase: the build host has none, the global
-	### toolchain gets one
-	build lfs/wpa_supplicant:native
-	echo Configuring WiFi: ${LFS_WLANDEV}
-	### The passphrase goes through stdin, not on a command line, and its commented copy (#psk=) is
-	### left out: the image gets the key. LFS_WLANCOUNTRY (ISO 3166 code) sets the regulatory
-	### domain: without it the world domain leaves out the channels some countries add (12 and 13
-	### in Europe).
-	{
-		echo "ctrl_interface=/run/wpa_supplicant"
-		if [ -n "${LFS_WLANCOUNTRY}" ]
-		then
-			echo "country=${LFS_WLANCOUNTRY}"
-		fi
-		echo
-		printf '%s\n' "${LFS_WLANPSK}" | "${GLOBAL_TOOLCHAIN_PATH}/bin/wpa_passphrase" "${LFS_WLANSSID}" | grep -v '^[[:space:]]*#psk='
-	} > "${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf"
-	chmod 600 "${BIN_PATH}/etc/wpa_supplicant/wpa_supplicant-${LFS_WLANDEV}.conf"
-	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
-		systemctl enable wpa_supplicant@${LFS_WLANDEV}
-	EOF
-	### No SSID= match: the SSID is a list of globs there, and a name with a space would not match
-	cat > ${BIN_PATH}/etc/systemd/network/${LFS_WLANDEV}.network <<-EOF
-		[Match]
-		Name=${LFS_WLANDEV}
-
-		[Network]
-		DHCP=yes
-
-		[DHCPv4]
-		UseDomains=yes
-
-		[IPv6AcceptRA]
-		UseDomains=yes
-	EOF
-	echo
+	### The passphrase goes through the pipe, never on a command line: the image gets the key
+	### wpa_passphrase derives from it and nothing else
+	printf '%s\n' "${LFS_WLANPSK}" | configure_wireless ${LFS_WLANDEV} --ssid "${LFS_WLANSSID}" \
+		${LFS_WLANCOUNTRY:+--country ${LFS_WLANCOUNTRY}}
+	configure_network ${LFS_WLANDEV}
 fi
 
-### systemd-networkd-wait-online waits for every link networkd manages: with the cable out, or the
-### WiFi out of reach, network-online.target (update-pki.service wants it) failed after two minutes.
-### One link online is enough
-mkdir -p ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d
-cat > ${BIN_PATH}/etc/systemd/system/systemd-networkd-wait-online.service.d/any.conf <<-EOF
-	[Service]
-	ExecStart=
-	ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any
-EOF
+### One link online is enough for network-online.target, which update-pki.service wants
+set_network_wait_online --any
 
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
-	echo Enabling SSHd
-	cat >>${BIN_PATH}/postinst_scripts/99-lfs-configurations <<-EOF
-		systemctl enable sshd
-	EOF
-	### The host keys of the image are the ones of the project data directory, kept across builds so a
-	### reflashed board keeps its ssh identity: generate_ssh_keys writes them there and copies them in
-	generate_ssh_keys --install binaries
-	echo
+	configure_ssh
 fi
 
 function build_lfs_image () {
@@ -334,10 +257,10 @@ function build_lfs_image () {
 			EOF
 		;;
 		generic-x64)
-			cat > ${BIN_PATH}/postinst_scripts/99-lfs-grub-configuration <<-EOF
-				#grub-install --target=x86_64-efi --removable --efi-directory=/boot --boot-directory=/boot
-				grub-install ${LFS_LBROOT/p2/}
-			EOF
+			### The boot loader is installed on the disk of the image from inside it, with the
+			### other post install commands of the project
+			#add_postinstall_command "grub-install --target=x86_64-efi --removable --efi-directory=/boot --boot-directory=/boot"
+			add_postinstall_command "grub-install ${LFS_LBROOT/p2/}"
 			mkdir -p ${BIN_PATH}/boot/grub
 			cat > ${BIN_PATH}/boot/grub/grub.cfg <<-EOF
 				# Begin /boot/grub/grub.cfg
@@ -373,17 +296,16 @@ function build_lfs_image () {
 	run_postinstall_scripts lfs
 	run_cmd "cp -fv ${PLATFORM_PATH}/lfs/boot/${INITRAMFS_NAME} ${BIN_PATH}/boot" >>${LOG_PATH}/images_lfs.log
 
-	#run_on_root_dir lfs root "systemctl enable console-getty"
-	run_on_root_dir lfs root "systemctl get-default && systemctl set-default multi-user.target"
-	run_on_root_dir lfs root "systemctl enable systemd-networkd"
-	run_on_root_dir lfs root "systemctl enable systemd-resolved"
-	run_on_root_dir lfs root "systemctl enable systemd-timesyncd"
-	run_on_root_dir lfs root "systemctl mask tmp.mount"
+	### The image is built and its post install scripts have run: --tag lfs is what makes these
+	### run now, in the chroot of the image, instead of going into the post install script
+	#enable_service --tag lfs console-getty
+	set_default_target --tag lfs multi-user.target
+	enable_service --tag lfs systemd-networkd systemd-resolved systemd-timesyncd
+	mask_service --tag lfs tmp.mount
 	### video and audio are what the devices of the firmware mailbox (the udev rule of rpi-utils)
 	### and the sound cards belong to: without them vcgencmd and aplay need root
-	run_on_root_dir lfs root "useradd -G wheel,audio,video -m lfs"
-	#run_on_root_dir lfs root "echo root:changeme | chpasswd"
-	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
+	add_user lfs --tag lfs --groups wheel,audio,video --password lfs
+	#set_password --tag lfs root changeme
 
 	unmount_tag --finalize lfs
 	if [ -n "${QEMU_MACHINE}" ] && [ -n "${QEMU_STORAGE}" ]
