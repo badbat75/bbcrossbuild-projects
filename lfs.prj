@@ -56,6 +56,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 			build raspberrypi/rpi-firmware_1
 			build raspberrypi/rpi-bluez-firmware
 			build raspberrypi/pi-bluetooth_0
+			build raspberrypi/rpi-utils
 		;;
 		*)
 			build lfs/kernel
