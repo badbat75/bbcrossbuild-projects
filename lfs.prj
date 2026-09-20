@@ -379,7 +379,9 @@ function build_lfs_image () {
 	run_on_root_dir lfs root "systemctl enable systemd-resolved"
 	run_on_root_dir lfs root "systemctl enable systemd-timesyncd"
 	run_on_root_dir lfs root "systemctl mask tmp.mount"
-	run_on_root_dir lfs root "useradd -G wheel -m lfs"
+	### video and audio are what the devices of the firmware mailbox (the udev rule of rpi-utils)
+	### and the sound cards belong to: without them vcgencmd and aplay need root
+	run_on_root_dir lfs root "useradd -G wheel,audio,video -m lfs"
 	#run_on_root_dir lfs root "echo root:changeme | chpasswd"
 	run_on_root_dir lfs root "echo lfs:lfs | chpasswd"
 
