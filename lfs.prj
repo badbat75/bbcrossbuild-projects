@@ -185,6 +185,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 		build lfs/ninja
 		build lfs/meson
 		build lfs/doxygen
+		build lfs/git
 	else
 		LFS_REMOVE_DEVFILES="--remove_devfiles"
 	fi
