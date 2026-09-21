@@ -171,6 +171,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	then
 		build lfs/binutils
 		build lfs/gcc:binaries
+		build lfs/llvm
 		build lfs/gdb
 		build lfs/make
 		build lfs/bison
