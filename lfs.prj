@@ -14,11 +14,15 @@ LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
 ### DHCP on the wired interface (net.ifnames=0 on the kernel command line names it eth0 on every
 ### platform); LFS_LANDEV= in lfs.conf leaves it unconfigured
 LFS_LANDEV=${LFS_LANDEV-eth0}
+### Compressed swap on zram for the boards with little RAM; LFS_ZRAM=0 in lfs.conf leaves the
+### unit out of the image (the kernel keeps its zram module)
+LFS_ZRAM=${LFS_ZRAM:-1}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
 echo
 echo "Is ssh enabled: $( [ ${LFS_ENABLESSH} -eq 1 ] && echo yes || no )"
+echo "Is zram swap enabled: $( [ ${LFS_ZRAM} -eq 1 ] && echo yes || no )"
 echo "LFS hostname: ${LFS_HOSTNAME}"
 echo "LFS filesystem type: ${LFS_FSTYPE}"
 if [ -n "${LFS_LANDEV}" ]
@@ -72,6 +76,9 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/systemd
 	build lfs/D-Bus
 	build lfs/polkit
+### Swap and the clock of the boards without an RTC
+	build lfs/zram-swap
+	build lfs/fake-hwclock
 ### Minimal
 	build lfs/bash
 	build lfs/man-pages
@@ -213,6 +220,14 @@ then
 	configure_ssh
 fi
 
+### The policy of the project on the units of the packages: preset-all of a system installed
+### from the packages follows it, the enable_service of the image states it here and now
+set_service_preset enable fstrim.timer fake-hwclock.service fake-hwclock-save.timer
+if [ ${LFS_ZRAM} -eq 1 ]
+then
+	set_service_preset enable zram-swap.service
+fi
+
 function build_lfs_image () {
 	set -e
 	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE}
@@ -301,6 +316,13 @@ function build_lfs_image () {
 	#enable_service --tag lfs console-getty
 	set_default_target --tag lfs multi-user.target
 	enable_service --tag lfs systemd-networkd systemd-resolved systemd-timesyncd
+	### fstrim.timer is the weekly TRIM of the flash storage, fake-hwclock the clock of the
+	### boards without an RTC, zram-swap the compressed swap (LFS_ZRAM=0 leaves it out)
+	enable_service --tag lfs fstrim.timer fake-hwclock.service fake-hwclock-save.timer
+	if [ ${LFS_ZRAM} -eq 1 ]
+	then
+		enable_service --tag lfs zram-swap.service
+	fi
 	mask_service --tag lfs tmp.mount
 	### video and audio are what the devices of the firmware mailbox (the udev rule of rpi-utils)
 	### and the sound cards belong to: without them vcgencmd and aplay need root
