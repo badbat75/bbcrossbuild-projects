@@ -1,8 +1,3 @@
-if [ -f ${PRJ_PATH}/lfs.conf ]
-then
-	. ${PRJ_PATH}/lfs.conf
-fi
-
 ## Sets default values:
 LFS_SPLITUSR=${LFS_SPLITUSR:-0}
 LFS_ENABLESSH=${LFS_ENABLESSH:-1}
