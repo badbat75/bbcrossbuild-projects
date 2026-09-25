@@ -11,8 +11,8 @@ BUILD_LIBSTATIC=0
 
 build lfs/create-base-fs_1.0
 
-KERNEL_VER=5.15.74
+KERNEL_VER=6.18.40
 setup_full_toolchain
-build microsoft/wsl-kernel_5.15
+build microsoft/wsl-kernel_6.18
 
 cp -fv ${BIN_PATH}/boot/vmlinuz* ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}
