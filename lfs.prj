@@ -12,12 +12,16 @@ LFS_LANDEV=${LFS_LANDEV-eth0}
 ### Compressed swap on zram for the boards with little RAM; LFS_ZRAM=0 in lfs.conf leaves the
 ### unit out of the image (the kernel keeps its zram module)
 LFS_ZRAM=${LFS_ZRAM:-1}
+### NetworkManager for the wired and the WiFi link instead of systemd-networkd and
+### wpa_supplicant@<device>; LFS_ENABLENM=1 in lfs.conf builds and configures it
+LFS_ENABLENM=${LFS_ENABLENM:-0}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
 echo
 echo "Is ssh enabled: $( [ ${LFS_ENABLESSH} -eq 1 ] && echo yes || no )"
 echo "Is zram swap enabled: $( [ ${LFS_ZRAM} -eq 1 ] && echo yes || no )"
+echo "Network managed by: $( [ ${LFS_ENABLENM} -eq 1 ] && echo NetworkManager || echo systemd-networkd )"
 echo "LFS hostname: ${LFS_HOSTNAME}"
 echo "LFS filesystem type: ${LFS_FSTYPE}"
 if [ -n "${LFS_LANDEV}" ]
@@ -125,11 +129,17 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/iw
 	#build lfs/wireless-tools
 	build lfs/bluez
+	if [ ${LFS_ENABLENM} -eq 1 ]
+	then
+		build lfs/NetworkManager
+	fi
 ### Security
 	build lfs/sudo
 ### Network Servers/Clients
 	build lfs/bind9
-	build lfs/dhcp
+	### ISC DHCP is end of life (2022) and nothing uses it: systemd-networkd and NetworkManager
+	### have their own DHCP client, networkd a DHCP server too
+	#build lfs/dhcp
 	#build lfs/dhcpcd
 	build lfs/openssh
 	build lfs/Avahi
@@ -195,22 +205,38 @@ source "${STATUS_PATH}/system_config"
 set_hostname ${LFS_HOSTNAME}
 set_locale en_US.UTF-8
 
-if [ -n "${LFS_LANDEV}" ]
+if [ ${LFS_ENABLENM} -eq 1 ]
 then
-	configure_network ${LFS_LANDEV}
-fi
+	### NetworkManager: DNS stays with systemd-resolved, the wired link gets the automatic DHCP
+	### connection of NetworkManager (LFS_LANDEV is not needed), the WiFi network a keyfile profile
+	configure_networkmanager --dns systemd-resolved
+	if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
+	then
+		### The passphrase goes through the pipe, never on a command line: the profile gets the key
+		### wpa_passphrase derives from it and nothing else
+		printf '%s\n' "${LFS_WLANPSK}" | configure_wireless ${LFS_WLANDEV} --networkmanager \
+			--ssid "${LFS_WLANSSID}" ${LFS_WLANCOUNTRY:+--country ${LFS_WLANCOUNTRY}}
+	fi
+	set_service_preset enable NetworkManager.service NetworkManager-wait-online.service
+	set_service_preset disable systemd-networkd.service systemd-networkd-wait-online.service
+else
+	if [ -n "${LFS_LANDEV}" ]
+	then
+		configure_network ${LFS_LANDEV}
+	fi
 
-if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
-then
-	### The passphrase goes through the pipe, never on a command line: the image gets the key
-	### wpa_passphrase derives from it and nothing else
-	printf '%s\n' "${LFS_WLANPSK}" | configure_wireless ${LFS_WLANDEV} --ssid "${LFS_WLANSSID}" \
-		${LFS_WLANCOUNTRY:+--country ${LFS_WLANCOUNTRY}}
-	configure_network ${LFS_WLANDEV}
-fi
+	if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
+	then
+		### The passphrase goes through the pipe, never on a command line: the image gets the key
+		### wpa_passphrase derives from it and nothing else
+		printf '%s\n' "${LFS_WLANPSK}" | configure_wireless ${LFS_WLANDEV} --ssid "${LFS_WLANSSID}" \
+			${LFS_WLANCOUNTRY:+--country ${LFS_WLANCOUNTRY}}
+		configure_network ${LFS_WLANDEV}
+	fi
 
-### One link online is enough for network-online.target, which update-pki.service wants
-set_network_wait_online --any
+	### One link online is enough for network-online.target, which update-pki.service wants
+	set_network_wait_online --any
+fi
 
 if [ ${LFS_ENABLESSH} -eq 1 ]
 then
@@ -312,7 +338,17 @@ function build_lfs_image () {
 	### run now, in the chroot of the image, instead of going into the post install script
 	#enable_service --tag lfs console-getty
 	set_default_target --tag lfs multi-user.target
-	enable_service --tag lfs systemd-networkd systemd-resolved systemd-timesyncd
+	if [ ${LFS_ENABLENM} -eq 1 ]
+	then
+		### NetworkManager-wait-online is what network-online.target waits for; wpa_supplicant is
+		### started by NetworkManager over D-Bus, hostapd stays disabled (an access point would be
+		### a hotspot profile of NetworkManager)
+		enable_service --tag lfs NetworkManager NetworkManager-wait-online
+		disable_service --tag lfs systemd-networkd systemd-networkd-wait-online
+	else
+		enable_service --tag lfs systemd-networkd
+	fi
+	enable_service --tag lfs systemd-resolved systemd-timesyncd
 	### fstrim.timer is the weekly TRIM of the flash storage, fake-hwclock the clock of the
 	### boards without an RTC, zram-swap the compressed swap (LFS_ZRAM=0 leaves it out)
 	enable_service --tag lfs fstrim.timer fake-hwclock.service fake-hwclock-save.timer
