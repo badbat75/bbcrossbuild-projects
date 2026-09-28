@@ -15,6 +15,9 @@ LFS_ZRAM=${LFS_ZRAM:-1}
 ### NetworkManager for the wired and the WiFi link instead of systemd-networkd and
 ### wpa_supplicant@<device>; LFS_ENABLENM=1 in lfs.conf builds and configures it
 LFS_ENABLENM=${LFS_ENABLENM:-0}
+### The platforms that boot with GRUB (not the Raspberry Pi): the UEFI firmware, GRUB x86_64-efi in the
+### EFI system partition (partition 1, /boot); LFS_EFI=0 in lfs.conf the BIOS, GRUB i386-pc in the MBR
+LFS_EFI=${LFS_EFI:-1}
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
@@ -24,6 +27,10 @@ echo "Is zram swap enabled: $( [ ${LFS_ZRAM} -eq 1 ] && echo yes || no )"
 echo "Network managed by: $( [ ${LFS_ENABLENM} -eq 1 ] && echo NetworkManager || echo systemd-networkd )"
 echo "LFS hostname: ${LFS_HOSTNAME}"
 echo "LFS filesystem type: ${LFS_FSTYPE}"
+case ${PLATFORM_NAME} in
+	rpi*) ;;
+	*) echo "Boot firmware: $( [ ${LFS_EFI} -eq 1 ] && echo UEFI || echo BIOS )" ;;
+esac
 if [ -n "${LFS_LANDEV}" ]
 then
 	echo "LAN device: ${LFS_LANDEV}"
@@ -59,7 +66,12 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 		;;
 		*)
 			build lfs/kernel
-			build lfs/GRUB
+			if [ ${LFS_EFI} -eq 1 ]
+			then
+				build lfs/GRUB:efi
+			else
+				build lfs/GRUB
+			fi
 		;;
 	esac
 	build lfs/kmod
@@ -253,7 +265,12 @@ fi
 
 function build_lfs_image () {
 	set -e
-	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE}
+	### Partition 1, /boot, is the EFI system partition of the UEFI firmware (type ef)
+	case ${PLATFORM_NAME} in
+		rpi*) LFS_BOOTTYPE=c ;;
+		*) LFS_BOOTTYPE=$( [ ${LFS_EFI} -eq 1 ] && echo ef || echo c ) ;;
+	esac
+	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE} --boottype ${LFS_BOOTTYPE}
 	mount_tag lfs --mountlist "2:/ 1:/boot"
 
 	### Boot configuration and support scripts
@@ -296,9 +313,15 @@ function build_lfs_image () {
 		;;
 		generic-x64)
 			### The boot loader is installed on the disk of the image from inside it, with the
-			### other post install commands of the project
-			#add_postinstall_command "grub-install --target=x86_64-efi --removable --efi-directory=/boot --boot-directory=/boot"
-			add_postinstall_command "grub-install ${LFS_LBROOT/p2/}"
+			### other post install commands of the project. UEFI: the removable path EFI/BOOT/BOOTX64.EFI
+			### of the EFI system partition, which the firmware boots without a boot entry in its NVRAM
+			### (the one of the build host is not the one of the target); BIOS: the MBR of the disk
+			if [ ${LFS_EFI} -eq 1 ]
+			then
+				add_postinstall_command "grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --no-nvram"
+			else
+				add_postinstall_command "grub-install --target=i386-pc ${LFS_LBROOT/p2/}"
+			fi
 			mkdir -p ${BIN_PATH}/boot/grub
 			cat > ${BIN_PATH}/boot/grub/grub.cfg <<-EOF
 				# Begin /boot/grub/grub.cfg
@@ -306,6 +329,7 @@ function build_lfs_image () {
 				set timeout=5
 
 				insmod part_gpt
+				insmod part_msdos
 				insmod ${LFS_FSTYPE}
 				set root=(hd0,1)
 

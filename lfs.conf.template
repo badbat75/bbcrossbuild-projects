@@ -15,5 +15,8 @@
 ### NetworkManager instead of systemd-networkd and wpa_supplicant@<device>: the WiFi network
 ### becomes a keyfile profile, the wired link the automatic DHCP connection (LFS_LANDEV unused)
 # LFS_ENABLENM=0
+### The boot of the platforms with GRUB (generic-*): 1 the UEFI firmware (GRUB x86_64-efi in the EFI
+### system partition), 0 the BIOS (GRUB i386-pc in the MBR)
+# LFS_EFI=1
 ### The image gets the WPA key derived from the passphrase, not the passphrase. Write this file
 ### with Unix line endings: a CR at the end of a line becomes part of the value
