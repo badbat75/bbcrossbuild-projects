@@ -1,0 +1,549 @@
+#!/bin/bash
+# board_check: check a system built by bbxb while it runs, on a board or under QEMU. It is the test
+# to run after every flash and after every installer tried on a running system; the bats suite next
+# to it checks the framework instead, and needs no target.
+#
+#	scp tests/board_check <host>:/tmp/ && ssh <host> sudo /tmp/board_check
+#
+# Every check prints ok, FAIL, warn or skip; the exit status is the number of failures. What the
+# hardware of the emulator does not have (WiFi, Bluetooth, a network device with a carrier, the
+# firmware drivers whose failed probe taints the kernel) is skipped, so the same run serves the board
+# and QEMU, and a board is always held to the strict check.
+#
+# It prints no secret: it never reads /etc/wpa_supplicant, and the journal lines naming a psk or a
+# passphrase are filtered out of every excerpt.
+#
+# Environment: BOARD_CHECK_EXTERNAL (a name of the internet to resolve, default www.google.com),
+# BOARD_CHECK_SLOW=1 (adds the checks that wait for a timeout, about 20 s).
+
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin:${PATH}
+export LC_ALL=C
+
+PASSED=0 FAILED=0 WARNED=0 SKIPPED=0
+EXTERNAL_NAME=${BOARD_CHECK_EXTERNAL:-www.google.com}
+SLOW=${BOARD_CHECK_SLOW:-0}
+
+### The presets of the image, as projects/lfs.prj and the postinstall scripts of the packages leave
+### them: a unit that starts by itself and one that must not
+UNITS_ENABLED="avahi-daemon.service sshd.service systemd-networkd.service systemd-resolved.service systemd-timesyncd.service bluetooth.service fstrim.timer zram-swap.service fake-hwclock.service fake-hwclock-save.timer"
+UNITS_DISABLED="avahi-dnsconfd.service hostapd.service regenerate_ssh_host_keys.service rsyncd.service systemd-sysupdate.timer"
+### The nsswitch.conf the recipes of glibc, systemd and nss-mdns compose
+HOSTS_LINE="hosts: files dns mdns_minimal"
+PASSWD_LINE="passwd: files systemd"
+### Errors known to be noise: the Bluetooth controller of the Pi rejects the privacy command and
+### BlueZ logs a null monitor at power down, and the emulator has none of the videocore devices
+KNOWN_ERRORS="Failed to set privacy|adv_monitor.c|bcm2835|vc4|v3d|dwc2|mmal|wlan0: Failed to|Failed to start Wireless"
+### Noise of the emulator only: the drivers of the firmware interface fail to probe, the SDIO slot of
+### the WiFi chip times out, the wlan0 device never appears, the usb network device of QEMU matches no
+### driver, and the camera regulator finds no GPIO because the virtual gpio driver is one of the two
+### that did not probe. On a board each of these is a real complaint, so they join the list above only
+### when the card says the machine is emulated
+EMULATED_ERRORS="vc_sm_connected_init|virtgpio|expgpio|mmc1: Timeout|/sys/subsystem/net/devices/wlan0|cdc_ether|cdc_subset|cam1_regulator"
+
+function section () { printf '\n== %s\n' "${*}"; }
+function ok () { PASSED=$((PASSED+1)); printf '  ok    %s\n' "${*}"; }
+function bad () { FAILED=$((FAILED+1)); printf '  FAIL  %s\n' "${*}"; }
+function warn () { WARNED=$((WARNED+1)); printf '  warn  %s\n' "${*}"; }
+function skip () { SKIPPED=$((SKIPPED+1)); printf '  skip  %s\n' "${*}"; }
+function note () { printf '        %s\n' "${*}"; }
+
+### expect <what> <wanted> <got>
+function expect () {
+	if [ "${3}" == "${2}" ]
+	then
+		ok "${1}: ${3}"
+	else
+		bad "${1}: ${3}, expected ${2}"
+	fi
+}
+
+### resolve <name>: milliseconds and first address, empty when nothing answers
+function resolve () {
+	local start end address
+	start=$(date +%s%N)
+	address=$(getent hosts "${1}" 2>/dev/null | head -n 1 | awk '{print $1}')
+	end=$(date +%s%N)
+	RESOLVE_MS=$(( (end - start) / 1000000 ))
+	RESOLVE_ADDRESS=${address}
+}
+
+### check_name <what> <name> <limit ms>
+function check_name () {
+	resolve "${2}"
+	if [ -z "${RESOLVE_ADDRESS}" ]
+	then
+		bad "${1} (${2}): not found after ${RESOLVE_MS} ms"
+	elif [ "${RESOLVE_MS}" -gt "${3}" ]
+	then
+		warn "${1} (${2}): ${RESOLVE_ADDRESS} in ${RESOLVE_MS} ms, over ${3} ms"
+	else
+		ok "${1} (${2}): ${RESOLVE_ADDRESS} in ${RESOLVE_MS} ms"
+	fi
+}
+
+SUDO=""
+PRIVILEGED=1
+if [ "$(id -u)" -ne 0 ]
+then
+	if sudo -n true 2>/dev/null
+	then
+		SUDO="sudo -n"
+	else
+		PRIVILEGED=0
+	fi
+fi
+
+### QEMU calls the card it emulates QEMU!, which is the one unambiguous sign of the emulator, and it
+### does not depend on the board model or on the outcome of a driver probe: the firmware devices are no
+### use for this, since /dev/vchiq, /dev/vcio and /dev/vc-mem are created under QEMU as well and the
+### gpio expander probes there too, only logging errors as it goes. A board that boots from anything
+### but an SD card has no mmcblk0 either, and is held to the strict check, which is the right default.
+EMULATED=0
+if [ "$(cat /sys/block/mmcblk0/device/name 2>/dev/null)" == 'QEMU!' ]
+then
+	EMULATED=1
+	KNOWN_ERRORS="${KNOWN_ERRORS}|${EMULATED_ERRORS}"
+fi
+
+section "system"
+note "$(grep -h '^PRETTY_NAME=\|^NAME=' /etc/os-release 2>/dev/null | head -n 1)"
+note "$(uname -srm), hostname $(hostname), up $(cut -d. -f1 /proc/uptime) s"
+STATE=$(systemctl is-system-running 2>/dev/null)
+if [ "${STATE}" == running ]
+then
+	ok "system state: running"
+else
+	bad "system state: ${STATE}"
+fi
+FAILED_UNITS=$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}' | tr '\n' ' ')
+if [ -z "${FAILED_UNITS}" ]
+then
+	ok "no failed unit"
+else
+	bad "failed units: ${FAILED_UNITS}"
+fi
+JOBS=$(systemctl list-jobs --no-legend 2>/dev/null | wc -l)
+expect "pending jobs" 0 "${JOBS}"
+STUCK=$(systemctl list-units --no-legend --plain --state=activating,deactivating,auto-restart,reloading 2>/dev/null | wc -l)
+expect "units activating or restarting" 0 "${STUCK}"
+note "$(systemd-analyze 2>/dev/null | head -n 1)"
+
+section "image"
+expect "mode of /" 555 "$(stat -c '%a' /)"
+if [ -e /postinst_scripts ]
+then
+	bad "/postinst_scripts is still there: the installer ran with a destination of its own"
+else
+	ok "no /postinst_scripts left in /"
+fi
+MACHINE_ID_SIZE=$(wc -c < /etc/machine-id 2>/dev/null || echo 0)
+if [ "${MACHINE_ID_SIZE}" -gt 1 ]
+then
+	ok "machine-id present (${MACHINE_ID_SIZE} bytes)"
+else
+	bad "machine-id empty: every boot is a first boot"
+fi
+if [ -e /usr/lib/clock-epoch ]
+then
+	ok "clock-epoch present, floor of the clock without a real time clock"
+else
+	bad "clock-epoch missing: a board without a real time clock boots at the systemd release date"
+fi
+KEY_MODES=$(stat -c '%a' /etc/ssh/ssh_host_*_key 2>/dev/null | sort -u | tr '\n' ' ')
+if [ "${KEY_MODES}" == "600 " ]
+then
+	ok "ssh host keys, all of mode 600"
+else
+	bad "ssh host key modes: ${KEY_MODES:-none}"
+fi
+### The interactive user projects/lfs.prj creates: wheel to become root, video for the devices of the
+### firmware mailbox and of the GPU, audio for the sound cards
+if id lfs > /dev/null 2>&1
+then
+	USER_GROUPS="$(id -nG lfs | tr ' ' '\n' | sort | tr '\n' ' ')"
+	MISSING=""
+	for group in audio video wheel
+	do
+		case " ${USER_GROUPS}" in
+			*" ${group} "*) continue ;;
+		esac
+		MISSING="${MISSING}${group} "
+	done
+	if [ -z "${MISSING}" ]
+	then
+		ok "the lfs user is in ${USER_GROUPS% }"
+	else
+		bad "the lfs user is not in ${MISSING% }, only in ${USER_GROUPS% }"
+	fi
+fi
+LEFTOVERS=""
+for entry in /* /.[!.]*
+do
+	case ${entry} in
+		/bin|/boot|/dev|/etc|/home|/lib|/lib64|/lost+found|/media|/mnt|/opt) continue ;;
+		/proc|/root|/run|/sbin|/srv|/sys|/tmp|/usr|/var) continue ;;
+		'/.[!.]*') continue ;;
+	esac
+	LEFTOVERS="${LEFTOVERS}${entry} "
+done
+if [ -z "${LEFTOVERS}" ]
+then
+	ok "nothing unexpected in /"
+else
+	warn "unexpected entries in /: ${LEFTOVERS}"
+fi
+if [ -d /var/log/journal ]
+then
+	ok "journal is persistent (/var/log/journal)"
+else
+	warn "journal is volatile: nothing survives a reboot"
+fi
+### Bit 10 (1024) of the taint mask is a module out of drivers/staging, which the bcm2835 video drivers
+### of the Raspberry Pi kernel are: expected here. On the emulator bit 9 (512) comes on top, the warning
+### the kernel takes when the firmware drivers it does not implement fail to probe. Any other bit, and
+### bit 9 on a board, is a real complaint of the kernel.
+TAINT=$(cat /proc/sys/kernel/tainted)
+TAINT_ALLOWED=1024
+if [ "${EMULATED}" -eq 1 ]
+then
+	TAINT_ALLOWED=$(( 1024 | 512 ))
+fi
+if [ $(( TAINT & ~TAINT_ALLOWED )) -eq 0 ]
+then
+	case ${TAINT} in
+		0) ok "kernel not tainted" ;;
+		1024) ok "kernel tainted only by a staging module (1024, the bcm2835 video drivers)" ;;
+		*) ok "kernel tainted by a staging module and the warning of a probe the emulator fails (${TAINT})" ;;
+	esac
+else
+	bad "kernel taint mask ${TAINT}, more than the staging modules (1024): see /proc/sys/kernel/tainted"
+fi
+if [ "$(findmnt -no OPTIONS / | cut -d, -f1)" == rw ]
+then
+	ok "/ mounted rw"
+else
+	bad "/ is not writable"
+fi
+
+section "services"
+for unit in ${UNITS_ENABLED}
+do
+	STATUS=$(systemctl is-enabled "${unit}" 2>/dev/null)
+	case ${STATUS} in
+		enabled|enabled-runtime|static|indirect) ok "${unit} ${STATUS}" ;;
+		"") skip "${unit} not installed" ;;
+		*) bad "${unit} ${STATUS}, it should start by itself" ;;
+	esac
+done
+for unit in ${UNITS_DISABLED}
+do
+	STATUS=$(systemctl is-enabled "${unit}" 2>/dev/null)
+	case ${STATUS} in
+		disabled|masked) ok "${unit} ${STATUS}" ;;
+		"") skip "${unit} not installed" ;;
+		*) bad "${unit} ${STATUS}, it should not start by itself" ;;
+	esac
+done
+for unit in systemd-networkd systemd-resolved systemd-timesyncd avahi-daemon sshd
+do
+	STATUS=$(systemctl is-active "${unit}" 2>/dev/null)
+	if [ "${STATUS}" == active ]
+	then
+		ok "${unit} active"
+	else
+		bad "${unit} ${STATUS}"
+	fi
+done
+if [ "${PRIVILEGED}" -eq 1 ]
+then
+	LLMNR_SOCKETS=$(${SUDO} ss -tulnH 2>/dev/null | grep -c ':5355 ')
+	expect "sockets on port 5355 (LLMNR must be off)" 0 "${LLMNR_SOCKETS}"
+	note "listening: $(${SUDO} ss -tulnH 2>/dev/null | awk '{print $5}' | sed 's/.*://' | sort -un | tr '\n' ' ')"
+else
+	skip "listening sockets need root"
+fi
+
+section "network"
+RESOLV_TARGET=$(readlink /etc/resolv.conf)
+expect "resolv.conf" "../run/systemd/resolve/stub-resolv.conf" "${RESOLV_TARGET}"
+### What follows needs an uplink, and the emulator has none: its usb-net never gets a carrier, so there
+### the lease, the DNS servers and the domain are skipped instead of counted as failures. lo always
+### reports a carrier and is left out; on a board a cable or WiFi that carries nothing still fails.
+SEARCH_DOMAIN=""
+UPLINK=0
+for carrier in /sys/class/net/*/carrier
+do
+	case ${carrier} in
+		/sys/class/net/lo/carrier) continue ;;
+	esac
+	if [ "$(cat "${carrier}" 2>/dev/null)" == 1 ]
+	then
+		UPLINK=1
+	fi
+done
+if [ "${UPLINK}" -eq 0 ] && [ "${EMULATED}" -eq 1 ]
+then
+	skip "the link, the DNS servers and the domain of the lease: the emulator has no network device"
+else
+	ROUTABLE=$(networkctl --no-pager 2>/dev/null | grep -c ' routable ')
+	if [ "${ROUTABLE}" -ge 1 ]
+	then
+		ok "${ROUTABLE} routable link"
+		networkctl --no-pager 2>/dev/null | sed -n '2,6p' | grep -v '^$' | while read -r link
+		do
+			note "${link}"
+		done
+	else
+		bad "no routable link"
+	fi
+	NAMESERVERS=$(resolvectl status 2>/dev/null | grep -c 'DNS Servers:')
+	if [ "${NAMESERVERS}" -ge 1 ]
+	then
+		ok "DNS servers from the lease: $(resolvectl status 2>/dev/null | sed -n 's/.*DNS Servers: //p' | head -n 1)"
+	else
+		bad "no DNS server known to resolved"
+	fi
+	SEARCH_DOMAIN=$(resolvectl domain 2>/dev/null | sed -n 's/^Link [0-9]* ([^)]*): //p' | grep -v '^$' | head -n 1)
+	if [ -n "${SEARCH_DOMAIN}" ]
+	then
+		ok "domain of the lease: ${SEARCH_DOMAIN} (UseDomains, what makes a .local domain of the LAN resolve)"
+	else
+		warn "no domain on any link: the DHCP server advertises none, or UseDomains is off"
+	fi
+fi
+expect "nsswitch hosts line" "${HOSTS_LINE}" "$(grep '^hosts:' /etc/nsswitch.conf | tr -s ' ')"
+expect "nsswitch passwd line" "${PASSWD_LINE}" "$(grep '^passwd:' /etc/nsswitch.conf | tr -s ' ')"
+DYNAMIC_USER_NAME=$(${SUDO} systemd-run --quiet --wait --pipe -p DynamicUser=yes /usr/bin/id -un 2>/dev/null)
+case ${DYNAMIC_USER_NAME} in
+	"") skip "dynamic user name needs root" ;;
+	run-*) ok "a dynamic user has a name: ${DYNAMIC_USER_NAME} (nss-systemd)" ;;
+	*) bad "a dynamic user resolves as ${DYNAMIC_USER_NAME}, nss-systemd is not in the passwd line" ;;
+esac
+
+section "name resolution"
+check_name "own host name" "$(hostname)" 200
+check_name "own mDNS name" "$(hostname).local" 500
+if [ -n "${SEARCH_DOMAIN}" ]
+then
+	check_name "own name in the domain of the LAN" "$(hostname).${SEARCH_DOMAIN}" 500
+	check_name "the gateway" _gateway 200
+fi
+if [ "${UPLINK}" -eq 1 ]
+then
+	check_name "a name of the internet" "${EXTERNAL_NAME}" 2000
+else
+	skip "a name of the internet (${EXTERNAL_NAME}): nothing to reach it through"
+fi
+### Any host of the link that announces itself over mDNS proves the multicast path end to end. Up to
+### three are tried, because a device that has just gone to sleep answers only after the timeout.
+OTHER_MDNS=""
+if command -v avahi-browse > /dev/null
+then
+	OTHER_MDNS=$(timeout 12 avahi-browse -art --terminate 2>/dev/null | awk '/hostname = /{print $NF}' \
+		| tr -d '[]' | sort -u | grep -v "^$(hostname).local$" | head -n 3 | tr '\n' ' ')
+fi
+if [ -n "${OTHER_MDNS}" ]
+then
+	MDNS_DONE=0
+	for name in ${OTHER_MDNS}
+	do
+		resolve "${name}"
+		if [ -n "${RESOLVE_ADDRESS}" ] && [ "${RESOLVE_MS}" -le 1000 ]
+		then
+			ok "the mDNS name of another host (${name}): ${RESOLVE_ADDRESS} in ${RESOLVE_MS} ms"
+			MDNS_DONE=1
+			break
+		fi
+		note "${name}: ${RESOLVE_ADDRESS:-no answer} after ${RESOLVE_MS} ms"
+	done
+	if [ "${MDNS_DONE}" -eq 0 ]
+	then
+		bad "no mDNS name of the ${OTHER_MDNS}hosts above resolved under a second"
+	fi
+else
+	skip "no other mDNS host announced itself on this link"
+fi
+if [ "${SLOW}" -eq 1 ]
+then
+	resolve nothere.local
+	note "a .local name nobody answers costs ${RESOLVE_MS} ms (the avahi timeout, expected)"
+fi
+
+section "wireless and bluetooth"
+if [ -d /sys/class/net/wlan0 ]
+then
+	WIFI_LINK=$(iw dev wlan0 link 2>/dev/null | grep -v -i -e psk -e passphrase | sed -n 's/^\s*SSID: //p')
+	if [ -n "${WIFI_LINK}" ]
+	then
+		ok "wlan0 associated with ${WIFI_LINK}, signal $(iw dev wlan0 link 2>/dev/null | sed -n 's/^\s*signal: //p')"
+	else
+		bad "wlan0 is not associated"
+	fi
+	### The country of wpa_supplicant sets the regulatory domain, and the country IE of the access
+	### point overrides it afterwards (the journal shows both as CTRL-EVENT-REGDOM-CHANGE): a domain
+	### other than the configured country is the choice of the access point. 00 is the world one,
+	### which leaves out the channels some countries add, 12 and 13 in Europe.
+	REGULATORY=$(iw reg get 2>/dev/null | sed -n 's/^country //p' | head -n 1)
+	case ${REGULATORY} in
+		00*) warn "the world regulatory domain: no country reached the kernel" ;;
+		"") note "regulatory domain unknown" ;;
+		*) note "regulatory domain: ${REGULATORY}" ;;
+	esac
+else
+	skip "no wlan0 (the emulator has no WiFi)"
+fi
+if [ -d /sys/class/bluetooth/hci0 ]
+then
+	if hciconfig hci0 2>/dev/null | grep -q 'UP RUNNING'
+	then
+		ok "hci0 up and running ($(hciconfig hci0 2>/dev/null | sed -n 's/.*BD Address: \([^ ]*\).*/\1/p'))"
+	else
+		bad "hci0 is down: the firmware or the UART attach failed"
+	fi
+	BT_ERRORS=$(hciconfig -a hci0 2>/dev/null | sed -n 's/.*errors:\([0-9]*\).*/\1/p' | sort -u | tr -d '\n')
+	expect "hci0 error counters" 0 "${BT_ERRORS}"
+	for unit in bluetooth "bthelper@hci0"
+	do
+		STATUS=$(systemctl is-active "${unit}" 2>/dev/null)
+		if [ "${STATUS}" == active ]
+		then
+			ok "${unit} active"
+		else
+			warn "${unit} ${STATUS}"
+		fi
+	done
+else
+	skip "no hci0 (the emulator has no Bluetooth)"
+fi
+
+section "power and resources"
+### The rule packages/raspberrypi/rpi-utils installs: the devices of the firmware mailbox belong to
+### the video group, so a program that asks the firmware something does not have to run as root.
+### Without the rule /dev/vcio is crw------- root root and only root sees the throttling word.
+for device in /dev/vcio /dev/vc-mem /dev/vchiq
+do
+	if [ -e "${device}" ]
+	then
+		expect "group of ${device}" video "$(stat -c %G "${device}")"
+	else
+		skip "group of ${device}: no such device"
+	fi
+done
+### vcgencmd reads the whole throttling word from the firmware: bits 0, 1 and 2 are the undervoltage,
+### the frequency cap and the throttling of this instant, bits 16, 17 and 18 the same three at any
+### moment since boot. The rpi_volt hwmon file carries bit 0 only, and answers for an image built
+### before rpi-utils existed.
+THROTTLED=""
+if command -v vcgencmd > /dev/null
+then
+	THROTTLED=$(${SUDO} vcgencmd get_throttled 2>/dev/null | sed -n 's/^throttled=0x//p')
+fi
+if [ -n "${THROTTLED}" ]
+then
+	note "throttling word: 0x${THROTTLED}"
+	THROTTLED_WORD=$(( 16#${THROTTLED} ))
+	expect "undervoltage now" 0 $(( THROTTLED_WORD & 1 ))
+	expect "arm frequency capped now" 0 $(( (THROTTLED_WORD >> 1) & 1 ))
+	expect "throttled now" 0 $(( (THROTTLED_WORD >> 2) & 1 ))
+	for bit in "16:undervoltage" "17:arm frequency cap" "18:throttling"
+	do
+		if [ $(( (THROTTLED_WORD >> ${bit%%:*}) & 1 )) -eq 1 ]
+		then
+			warn "${bit#*:} happened earlier in this boot (bit ${bit%%:*} of the throttling word)"
+		else
+			ok "no ${bit#*:} since boot"
+		fi
+	done
+elif [ -r /sys/class/hwmon/hwmon1/in0_lcrit_alarm ]
+then
+	expect "undervoltage alarm" 0 "$(cat /sys/class/hwmon/hwmon1/in0_lcrit_alarm)"
+else
+	skip "the throttling word and the undervoltage alarm: no vcgencmd and no voltage monitor"
+fi
+if [ -n "${THROTTLED}" ]
+then
+	note "SoC temperature: $(${SUDO} vcgencmd measure_temp | sed 's/temp=//')"
+	note "core voltage: $(${SUDO} vcgencmd measure_volts core | sed 's/volt=//')"
+elif [ -r /sys/class/thermal/thermal_zone0/temp ]
+then
+	note "SoC temperature: $(awk '{printf "%.1f C", $1/1000}' /sys/class/thermal/thermal_zone0/temp)"
+fi
+note "memory: $(free -m | awk '/^Mem:/{print $3" MB used of "$2" MB"}')"
+note "root filesystem: $(df -h --output=used,size,pcent / | tail -n 1 | awk '{print $1" used of "$2" ("$3")"}')"
+if command -v coredumpctl > /dev/null
+then
+	COREDUMPS=$(${SUDO} coredumpctl list --no-legend 2>/dev/null | wc -l)
+	expect "coredumps" 0 "${COREDUMPS}"
+fi
+
+section "python"
+if command -v python3 > /dev/null
+then
+	### The binary starts and prints its version even with a gutted or misplaced standard library:
+	### only an import of the core modules says the interpreter really runs
+	if python3 -c 'import encodings, io, ssl, json, sqlite3' > /dev/null 2>&1
+	then
+		ok "python3 imports its standard library ($(python3 -c 'import sys; print(sys.version.split()[0])'))"
+	else
+		bad "python3 cannot import its standard library: $(python3 -c 'import encodings, ssl' 2>&1 | tail -n 1)"
+	fi
+	if python3 -c 'import ssl' > /dev/null 2>&1
+	then
+		note "ssl: $(python3 -c 'import ssl; print(ssl.OPENSSL_VERSION)')"
+	fi
+	if python3 -c 'import json, ssl; json.dumps({"check": [1, 2, 3]}); ssl.create_default_context()' > /dev/null 2>&1
+	then
+		ok "python3 runs a functional check (json round-trip and TLS context)"
+	else
+		bad "python3 fails a functional check: $(python3 -c 'import json, ssl; ssl.create_default_context()' 2>&1 | tail -n 1)"
+	fi
+else
+	skip "python3: no python on this system"
+fi
+
+section "perl"
+if command -v perl > /dev/null
+then
+	### The binary starts even without its architecture-dependent modules: only the core XS
+	### modules say the installation is complete (Storable bakes the paths of the build in it)
+	if perl -e 'use strict; use warnings; use POSIX (); use Cwd (); use File::Basename (); use Encode (); use Scalar::Util (); use Storable ();' > /dev/null 2>&1
+	then
+		ok "perl loads its core modules ($(perl -e 'printf "%vd", $^V'))"
+	else
+		bad "perl cannot load its core modules: $(perl -e 'use Storable' 2>&1 | tail -n 1)"
+	fi
+else
+	skip "perl: no perl on this system"
+fi
+
+section "journal of this boot"
+if [ "${PRIVILEGED}" -eq 1 ]
+then
+	FIRST_ENTRY=$(${SUDO} journalctl -b --no-pager -o short-iso 2>/dev/null | head -n 1 | cut -d' ' -f1)
+	case ${FIRST_ENTRY} in
+		19*|"") bad "the journal of this boot starts at ${FIRST_ENTRY:-nothing}: the clock started at its epoch" ;;
+		*) ok "journal starts at ${FIRST_ENTRY}" ;;
+	esac
+	ERRORS=$(${SUDO} journalctl -b -p err --no-pager -o cat 2>/dev/null \
+		| grep -v -i -e psk -e passphrase | grep -v -E "${KNOWN_ERRORS}" | sort -u)
+	if [ -z "${ERRORS}" ]
+	then
+		ok "no error of its own in the journal"
+	else
+		warn "$(echo "${ERRORS}" | wc -l) error lines that are not known noise:"
+		echo "${ERRORS}" | head -n 8 | sed 's/^/        /'
+	fi
+	KNOWN_COUNT=$(${SUDO} journalctl -b -p err --no-pager -o cat 2>/dev/null | grep -c -E "${KNOWN_ERRORS}")
+	note "known noise filtered out: ${KNOWN_COUNT} lines"
+else
+	skip "the journal needs root"
+fi
+
+section "summary"
+printf '  %s ok, %s failed, %s warnings, %s skipped\n' "${PASSED}" "${FAILED}" "${WARNED}" "${SKIPPED}"
+if [ "${FAILED}" -eq 0 ]
+then
+	printf '  the system passes every check\n'
+fi
+exit "${FAILED}"

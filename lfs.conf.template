@@ -1,0 +1,19 @@
+### Default values for lfs project
+# LFS_TOOLCHAIN=gnu
+# LFS_SPLITUSR=0
+# WITH_NSCD=0
+# LFS_ENABLESSH=1
+# LFS_ENABLEDEV=0
+# LFS_HOSTNAME=lfs
+# LFS_FSTYPE=ext4
+# LFS_FSSIZE=4G
+# LFS_LANDEV=eth0
+# LFS_WLANSSID=<SSID>
+# LFS_WLANPSK=<Passphrase>
+# LFS_WLANDEV=wlan0
+# LFS_WLANCOUNTRY=<ISO 3166 country code, e.g. IT>
+### NetworkManager instead of systemd-networkd and wpa_supplicant@<device>: the WiFi network
+### becomes a keyfile profile, the wired link the automatic DHCP connection (LFS_LANDEV unused)
+# LFS_ENABLENM=0
+### The image gets the WPA key derived from the passphrase, not the passphrase. Write this file
+### with Unix line endings: a CR at the end of a line becomes part of the value

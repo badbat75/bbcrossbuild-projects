@@ -1,0 +1,4 @@
+# The settings of a project (lfs.conf from lfs.conf.template): passwords such as LFS_WLANPSK
+/*.conf
+# Throwaway projects of a single package test
+/test*.prj

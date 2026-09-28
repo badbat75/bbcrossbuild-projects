@@ -1,0 +1,34 @@
+#!/bin/bash
+GCC_TC_PATH=${HOME}/.bbxb/gcc-toolkits
+AVAIL_ARCHS=$(ls ${GCC_TC_PATH} | grep -Ev "data|source")
+
+function set_arch_paths () {
+	if [ -d ${GCC_TC_PATH}/${1} ]
+	then
+		export PATH=${GCC_TC_PATH}/${1}/toolchain/bin:${PATH}
+		echo "GCC toolkit for ${1} exported."
+		echo
+	else
+		echo "GCC for ${1} does not exist!"
+		echo
+		false
+	fi
+}
+
+case "${1}" in
+	"-a")
+		for ARCH in ${AVAIL_ARCHS}
+		do
+			set_arch_paths ${ARCH}
+		done
+	;;
+	"")
+		echo "Available architectures:"
+		echo
+		echo ${AVAIL_ARCHS}
+		echo
+	;;
+	*)
+		set_arch_paths ${1}
+	;;
+esac
