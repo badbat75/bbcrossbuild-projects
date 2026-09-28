@@ -325,6 +325,8 @@ function build_lfs_image () {
 			mkdir -p ${BIN_PATH}/boot/grub
 			### GRUB reads ext2, ext3 and ext4 with ext2.mod (there is no ext4.mod); the font through $prefix,
 			### the grub directory grub-install set, which on the EFI system partition is not /boot/grub
+			### The menu and the kernel on the screen and on the first serial port: the last console= is
+			### /dev/console (the screen), systemd starts a getty on both; the second entry leaves the serial port alone
 			cat > ${BIN_PATH}/boot/grub/grub.cfg <<-EOF
 				# Begin /boot/grub/grub.cfg
 				set default=0
@@ -335,19 +337,22 @@ function build_lfs_image () {
 				insmod ${LFS_FSTYPE/ext[34]/ext2}
 				set root=(hd0,1)
 
+				serial --unit=0 --speed=115200
+				terminal_input console serial
+				terminal_output console serial
 				if loadfont \$prefix/fonts/unicode.pf2; then
 				   set gfxmode=auto
 				   insmod all_video
-				   terminal_output gfxterm
+				   terminal_output gfxterm serial
 				fi
 
 				menuentry "GNU/Linux, Linux ${KERNEL_VER}"  {
-				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=ttyS0,115200 console=tty0
 				   initrd /${INITRAMFS_NAME}
 				}
 
-				menuentry "GNU/Linux, Linux ${KERNEL_VER} - Serial output"  {
-				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=ttyS0
+				menuentry "GNU/Linux, Linux ${KERNEL_VER} - No serial console"  {
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro
 				   initrd /${INITRAMFS_NAME}
 				}
 			EOF
