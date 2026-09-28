@@ -323,6 +323,8 @@ function build_lfs_image () {
 				add_postinstall_command "grub-install --target=i386-pc ${LFS_LBROOT/p2/}"
 			fi
 			mkdir -p ${BIN_PATH}/boot/grub
+			### GRUB reads ext2, ext3 and ext4 with ext2.mod (there is no ext4.mod); the font through $prefix,
+			### the grub directory grub-install set, which on the EFI system partition is not /boot/grub
 			cat > ${BIN_PATH}/boot/grub/grub.cfg <<-EOF
 				# Begin /boot/grub/grub.cfg
 				set default=0
@@ -330,10 +332,10 @@ function build_lfs_image () {
 
 				insmod part_gpt
 				insmod part_msdos
-				insmod ${LFS_FSTYPE}
+				insmod ${LFS_FSTYPE/ext[34]/ext2}
 				set root=(hd0,1)
 
-				if loadfont /boot/grub/fonts/unicode.pf2; then
+				if loadfont \$prefix/fonts/unicode.pf2; then
 				   set gfxmode=auto
 				   insmod all_video
 				   terminal_output gfxterm
