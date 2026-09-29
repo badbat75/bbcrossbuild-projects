@@ -107,7 +107,7 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 ### Filesystem progs
 	build lfs/e2fsprogs
 	build lfs/btrfs-progs
-	### /opt/lfs-utils: growroot.sh, / to the end of the disk; dracut-hostonly.sh, the initramfs of the machine
+	### /opt/lfs-utils: growroot.sh, / to the end of the disk; optimize-initramfs.sh, the initramfs of the machine
 	build lfs/lfs-utils
 	build lfs/dosfstools
 	build lfs/fuse
@@ -385,7 +385,7 @@ function build_lfs_image () {
 				   initrd /${INITRAMFS_NAME}
 				}
 
-				# The generic initramfs of the kernel package, kept by /opt/lfs-utils/dracut-hostonly.sh (lfs/lfs-utils)
+				# The generic initramfs of the kernel package, kept by /opt/lfs-utils/optimize-initramfs.sh (lfs/lfs-utils)
 				# when it makes the one of this machine
 				menuentry "GNU/Linux, Linux ${KERNEL_VER} - Generic initramfs (rescue)"  {
 				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=${LFS_SERIAL},115200 console=tty0
