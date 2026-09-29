@@ -107,6 +107,8 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 ### Filesystem progs
 	build lfs/e2fsprogs
 	build lfs/btrfs-progs
+	### /opt/lfs-utils: growroot.sh, / to the end of the disk
+	build lfs/lfs-utils
 	build lfs/dosfstools
 	build lfs/fuse
 	build lfs/attr
