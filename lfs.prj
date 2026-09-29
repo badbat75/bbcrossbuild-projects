@@ -15,9 +15,15 @@ LFS_ZRAM=${LFS_ZRAM:-1}
 ### NetworkManager for the wired and the WiFi link instead of systemd-networkd and
 ### wpa_supplicant@<device>; LFS_ENABLENM=1 in lfs.conf builds and configures it
 LFS_ENABLENM=${LFS_ENABLENM:-0}
-### The platforms that boot with GRUB (not the Raspberry Pi): the UEFI firmware, GRUB x86_64-efi in the
-### EFI system partition (partition 1, /boot); LFS_EFI=0 in lfs.conf the BIOS, GRUB i386-pc in the MBR
+### The platforms that boot with GRUB (generic-*, not the Raspberry Pi): the UEFI firmware, GRUB
+### <x86_64|arm64|arm>-efi in the EFI system partition (partition 1, /boot); LFS_EFI=0 in lfs.conf the
+### BIOS, GRUB i386-pc in the MBR, on x86_64; an ARM platform then gets no boot loader (QEMU -kernel)
 LFS_EFI=${LFS_EFI:-1}
+case ${HM} in
+	x86_64) LFS_GRUB_EFI=x86_64-efi ;;
+	aarch64) LFS_GRUB_EFI=arm64-efi ;;
+	arm) LFS_GRUB_EFI=arm-efi ;;
+esac
 
 echo "Tool chain: ${TOOLCHAIN}"
 echo "Architecture: ${HARCH}"
@@ -29,7 +35,7 @@ echo "LFS hostname: ${LFS_HOSTNAME}"
 echo "LFS filesystem type: ${LFS_FSTYPE}"
 case ${PLATFORM_NAME} in
 	rpi*) ;;
-	*) echo "Boot firmware: $( [ ${LFS_EFI} -eq 1 ] && echo UEFI || echo BIOS )" ;;
+	*) echo "Boot firmware: $( [ ${LFS_EFI} -eq 1 ] && echo UEFI || { [ ${HM} == x86_64 ] && echo BIOS || echo "none (QEMU -kernel)"; } )" ;;
 esac
 if [ -n "${LFS_LANDEV}" ]
 then
@@ -69,7 +75,8 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 			if [ ${LFS_EFI} -eq 1 ]
 			then
 				build lfs/GRUB:efi
-			else
+			elif [ ${HM} == x86_64 ]
+			then
 				build lfs/GRUB
 			fi
 		;;
@@ -313,17 +320,34 @@ function build_lfs_image () {
 				console=serial0,115200 console=tty1 ${KERNEL_BOOTPARAMS} cgroup_enable=memory
 			EOF
 		;;
-		generic-x64)
+		generic-*)
 			### The boot loader is installed on the disk of the image from inside it, with the
-			### other post install commands of the project. UEFI: the removable path EFI/BOOT/BOOTX64.EFI
+			### other post install commands of the project. UEFI: the removable path EFI/BOOT/BOOT<machine>.EFI
 			### of the EFI system partition, which the firmware boots without a boot entry in its NVRAM
 			### (the one of the build host is not the one of the target); BIOS: the MBR of the disk
 			if [ ${LFS_EFI} -eq 1 ]
 			then
-				add_postinstall_command "grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --no-nvram"
-			else
+				add_postinstall_command "grub-install --target=${LFS_GRUB_EFI} --efi-directory=/boot --boot-directory=/boot --removable --no-nvram"
+			elif [ ${HM} == x86_64 ]
+			then
 				add_postinstall_command "grub-install --target=i386-pc ${LFS_LBROOT/p2/}"
 			fi
+			### The first serial port: the 16550 of the PC (ttyS0), the PL011 of the virt machine
+			### (ttyAMA0). GRUB drives the 16550 itself; on ARM the UEFI firmware already writes its
+			### console to the serial port and to the screen, and GRUB stays on it (gfxterm would take
+			### the menu off the serial port)
+			case ${HM} in
+				x86_64)
+					LFS_SERIAL=ttyS0
+					LFS_GRUB_SERIAL=$( printf '%s\n' "serial --unit=0 --speed=115200" "terminal_input console serial" "terminal_output console serial" )
+					LFS_GRUB_GFXTERM="gfxterm serial"
+				;;
+				*)
+					LFS_SERIAL=ttyAMA0
+					LFS_GRUB_SERIAL=
+					LFS_GRUB_GFXTERM="console"
+				;;
+			esac
 			mkdir -p ${BIN_PATH}/boot/grub
 			### GRUB reads ext2, ext3 and ext4 with ext2.mod (there is no ext4.mod); the font through $prefix,
 			### the grub directory grub-install set, which on the EFI system partition is not /boot/grub
@@ -339,17 +363,15 @@ function build_lfs_image () {
 				insmod ${LFS_FSTYPE/ext[34]/ext2}
 				set root=(hd0,1)
 
-				serial --unit=0 --speed=115200
-				terminal_input console serial
-				terminal_output console serial
+				${LFS_GRUB_SERIAL}
 				if loadfont \$prefix/fonts/unicode.pf2; then
 				   set gfxmode=auto
 				   insmod all_video
-				   terminal_output gfxterm serial
+				   terminal_output ${LFS_GRUB_GFXTERM}
 				fi
 
 				menuentry "GNU/Linux, Linux ${KERNEL_VER}"  {
-				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=ttyS0,115200 console=tty0
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=${LFS_SERIAL},115200 console=tty0
 				   initrd /${INITRAMFS_NAME}
 				}
 
