@@ -77,7 +77,7 @@ build raspberrypi/rpi-kernel_5.15 --with_extra_modules moode/ax88179_178a,moode/
 build raspberrypi/raspi-config
 build raspberrypi/raspberrypi-sys-mods
 build raspberrypi/raspberrypi-net-mods
-build moode/alsa-utils
+build lfs/alsa-utils
 build raspbian/iw_5.19
 build firmwares/wireless-regdb
 build lfs/hostapd
@@ -86,7 +86,7 @@ build moode/mediainfo_22.06
 build moode/alsacap
 build moode/udisks-glue_1.3.5               	
 build raspbian/udevil_0.4.4-2
-build moode/bluez_5
+build lfs/bluez
 build raspberrypi/pi-bluetooth_0
 WITH_APTX=libopenaptx build moode/bluez-alsa_4
 build moode/mpd_0.23
@@ -99,7 +99,7 @@ build moode/camillagui-backend_1
 build moode/minidlna_1.3.0
 build moode/ashuffle_3
 WITH_ALAC=1 build moode/shairport-sync_3.3.9
-build moode/librespot_0
+build lfs/librespot
 build moode/squeezelite_master
 build moode/upmpdcli_1.5
 build moode/libupnpp-bindings_0.21
