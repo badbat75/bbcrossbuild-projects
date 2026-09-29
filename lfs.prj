@@ -265,6 +265,10 @@ fi
 ### The policy of the project on the units of the packages: preset-all of a system installed
 ### from the packages follows it, the enable_service of the image states it here and now
 set_service_preset enable fstrim.timer fake-hwclock.service fake-hwclock-save.timer
+### The initramfs of the machine (lfs/dracut): the generic one of the kernel package stays as
+### initramfs-<release>-generic.img from the first boot, the rescue entry of GRUB (on the Raspberry
+### Pi the initramfs line of config.txt names it by hand)
+set_service_preset enable dracut-hostonly.service
 if [ ${LFS_ZRAM} -eq 1 ]
 then
 	set_service_preset enable zram-swap.service
@@ -382,6 +386,11 @@ function build_lfs_image () {
 				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=tty0
 				   initrd /${INITRAMFS_NAME}
 				}
+
+				menuentry "GNU/Linux, Linux ${KERNEL_VER} - Generic initramfs (rescue)"  {
+				   linux /vmlinuz-${KERNEL_VER} ${KERNEL_BOOTPARAMS} ro console=${LFS_SERIAL},115200 console=tty0
+				   initrd /${INITRAMFS_NAME%.img}-generic.img
+				}
 			EOF
 			ln -fs ../boot/grub/grub.cfg ${BIN_PATH}/etc/grub.cfg
 		;;
@@ -408,8 +417,9 @@ function build_lfs_image () {
 	fi
 	enable_service --tag lfs systemd-resolved systemd-timesyncd
 	### fstrim.timer is the weekly TRIM of the flash storage, fake-hwclock the clock of the
-	### boards without an RTC, zram-swap the compressed swap (LFS_ZRAM=0 leaves it out)
-	enable_service --tag lfs fstrim.timer fake-hwclock.service fake-hwclock-save.timer
+	### boards without an RTC, dracut-hostonly the initramfs of the machine at the first boot,
+	### zram-swap the compressed swap (LFS_ZRAM=0 leaves it out)
+	enable_service --tag lfs fstrim.timer fake-hwclock.service fake-hwclock-save.timer dracut-hostonly.service
 	if [ ${LFS_ZRAM} -eq 1 ]
 	then
 		enable_service --tag lfs zram-swap.service
