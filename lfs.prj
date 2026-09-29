@@ -278,7 +278,7 @@ function build_lfs_image () {
 	echo -n "Configuring boot parameters... "
 	LFS_LBROOT="$(findmnt -nu -o SOURCE ${DATA_PATH}/${PROJECT_NAME}/${PLATFORM_NAME}/lfs)"
 	LFS_PARTUUID="$(blkid -o value --match-tag PARTUUID ${LFS_LBROOT})"
-	KERNEL_BOOTPARAMS="root=PARTUUID=${LFS_PARTUUID} rootfstype=${LFS_FSTYPE} fsck.repair=yes rootwait cgroup_enable=memory net.ifnames=0 systemd.gpt_auto=no"
+	KERNEL_BOOTPARAMS="root=PARTUUID=${LFS_PARTUUID} rootfstype=${LFS_FSTYPE} fsck.repair=yes rootwait net.ifnames=0 systemd.gpt_auto=no"
 	INITRAMFS_NAME=initramfs-${KERNEL_RELEASE}.img
 	case ${PLATFORM_NAME} in
 		rpi*)
@@ -307,8 +307,10 @@ function build_lfs_image () {
 				kernel $(eval echo "${KERNEL_NAME}")
 				initramfs ${INITRAMFS_NAME} followkernel
 			EOF
+			### cgroup_enable=memory: the Raspberry Pi kernel leaves the memory controller off by default;
+			### the others do not know the parameter and hand it to user space
 			cat >${BIN_PATH}/boot/cmdline.txt <<-EOF
-				console=serial0,115200 console=tty1 ${KERNEL_BOOTPARAMS}
+				console=serial0,115200 console=tty1 ${KERNEL_BOOTPARAMS} cgroup_enable=memory
 			EOF
 		;;
 		generic-x64)

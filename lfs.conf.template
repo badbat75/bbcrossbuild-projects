@@ -7,6 +7,9 @@
 # LFS_HOSTNAME=lfs
 # LFS_FSTYPE=ext4
 # LFS_FSSIZE=4G
+### The version in /etc/os-release and /etc/lsb-release (lfs/create-base-config): the version of bbxb
+### (git describe of the checkout) when unset
+# OS_VERSION=
 # LFS_LANDEV=eth0
 # LFS_WLANSSID=<SSID>
 # LFS_WLANPSK=<Passphrase>
