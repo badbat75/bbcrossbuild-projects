@@ -9,7 +9,6 @@ the settings of the user and is sourced by `bbxb` before it.
 | --- | --- |
 | `lfs.prj` | The reference project: toolchain, kernel, ~100 packages, disk image, QEMU scripts |
 | `lfs.conf.template` | The settings `lfs.prj` reads: `cp lfs.conf.template lfs.conf` |
-| `moode.prj` | moOde audio player on a Raspberry Pi OS image |
 | `librespot.prj`, `rpi-kernel.prj`, `wsl-kernel.prj` | Minimal examples: one application, one kernel |
 | `gcc-toolkits.prj` | The toolchain only (`setup_full_toolchain`); `utilities/gcc_tkit_path` puts one in `PATH` |
 | `tests/board_check` | Checks a running system `lfs.prj` built, on the board or under QEMU |
