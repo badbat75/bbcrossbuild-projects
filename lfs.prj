@@ -274,13 +274,21 @@ fi
 
 function build_lfs_image () {
 	set -e
-	### Partition 1, /boot, is the EFI system partition of the UEFI firmware (type ef)
+	### Partition 1, /boot, is the EFI system partition of the UEFI firmware (type ef); on the Raspberry
+	### Pi it is /boot/firmware, as on Raspberry Pi OS: /boot keeps the kernel and the initramfs of the
+	### kernel package, the firmware the copies of raspberrypi/rpi-kernel (KERNEL_NAME)
 	case ${PLATFORM_NAME} in
-		rpi*) LFS_BOOTTYPE=c ;;
-		*) LFS_BOOTTYPE=$( [ ${LFS_EFI} -eq 1 ] && echo ef || echo c ) ;;
+		rpi*)
+			LFS_BOOTTYPE=c
+			LFS_BOOTDIR=/boot/firmware
+		;;
+		*)
+			LFS_BOOTTYPE=$( [ ${LFS_EFI} -eq 1 ] && echo ef || echo c )
+			LFS_BOOTDIR=/boot
+		;;
 	esac
-	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE} --boottype ${LFS_BOOTTYPE}
-	mount_tag lfs --mountlist "2:/ 1:/boot"
+	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE} --boottype ${LFS_BOOTTYPE} --bootdir ${LFS_BOOTDIR}
+	mount_tag lfs --mountlist "2:/ 1:${LFS_BOOTDIR}"
 
 	### Boot configuration and support scripts
 	echo
@@ -291,34 +299,34 @@ function build_lfs_image () {
 	INITRAMFS_NAME=initramfs-${KERNEL_RELEASE}.img
 	case ${PLATFORM_NAME} in
 		rpi*)
+			mkdir -p ${BIN_PATH}${LFS_BOOTDIR}
 			case ${PLATFORM_NAME} in
 				rpi5-aarch64)
-					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-					echo "dtoverlay=vc4-kms-v3d-pi5" >>${BIN_PATH}/boot/config.txt
+					echo "arm_64bit=1" >${BIN_PATH}${LFS_BOOTDIR}/config.txt
+					echo "dtoverlay=vc4-kms-v3d-pi5" >>${BIN_PATH}${LFS_BOOTDIR}/config.txt
 				;;
 				rpi4-aarch64)
-					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-					echo "dtoverlay=vc4-kms-v3d-pi4" >>${BIN_PATH}/boot/config.txt
+					echo "arm_64bit=1" >${BIN_PATH}${LFS_BOOTDIR}/config.txt
+					echo "dtoverlay=vc4-kms-v3d-pi4" >>${BIN_PATH}${LFS_BOOTDIR}/config.txt
 				;;
 				rpi3-aarch64)
-					echo "arm_64bit=1" >${BIN_PATH}/boot/config.txt
-					echo "dtoverlay=vc4-kms-v3d" >>${BIN_PATH}/boot/config.txt
+					echo "arm_64bit=1" >${BIN_PATH}${LFS_BOOTDIR}/config.txt
+					echo "dtoverlay=vc4-kms-v3d" >>${BIN_PATH}${LFS_BOOTDIR}/config.txt
 				;;
 				*)
-					echo "arm_64bit=0" >${BIN_PATH}/boot/config.txt
-					echo "dtoverlay=vc4-kms-v3d" >>${BIN_PATH}/boot/config.txt
+					echo "arm_64bit=0" >${BIN_PATH}${LFS_BOOTDIR}/config.txt
+					echo "dtoverlay=vc4-kms-v3d" >>${BIN_PATH}${LFS_BOOTDIR}/config.txt
 				;;
 			esac
-			### KERNEL_NAME of a platform carries ${KERNEL_VER} unexpanded, the way kernelbuild reads it
-			### when it names the image: one more expansion gives the file the firmware has to find,
-			### where "${KERNEL_NAME}-${KERNEL_VER}" wrote the version twice and the variable once
-			cat >>${BIN_PATH}/boot/config.txt <<-EOF
-				kernel $(eval echo "${KERNEL_NAME}")
-				initramfs ${INITRAMFS_NAME} followkernel
+			### The kernel under the name of the firmware (KERNEL_NAME: kernel8.img, kernel_2712.img...),
+			### and the initramfs next to it that auto_initramfs finds by that name (initramfs8)
+			cat >>${BIN_PATH}${LFS_BOOTDIR}/config.txt <<-EOF
+				kernel=${KERNEL_NAME}
+				auto_initramfs=1
 			EOF
 			### cgroup_enable=memory: the Raspberry Pi kernel leaves the memory controller off by default;
 			### the others do not know the parameter and hand it to user space
-			cat >${BIN_PATH}/boot/cmdline.txt <<-EOF
+			cat >${BIN_PATH}${LFS_BOOTDIR}/cmdline.txt <<-EOF
 				console=serial0,115200 console=tty1 ${KERNEL_BOOTPARAMS} cgroup_enable=memory
 			EOF
 		;;
