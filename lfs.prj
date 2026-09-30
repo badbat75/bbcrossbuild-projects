@@ -407,7 +407,9 @@ function build_lfs_image () {
 
 	inject_into_mount_tag lfs binaries ${LFS_REMOVE_DEVFILES}
 	run_postinstall_scripts lfs
-	run_cmd "cp -fv ${PLATFORM_PATH}/lfs/boot/${INITRAMFS_NAME} ${BIN_PATH}/boot" >>${LOG_PATH}/images_lfs.log
+	### The initramfs of the image back into the sysroot, for the emulator: on the root file system of the
+	### image (/boot of the Raspberry Pi) it is root's, mode 0600 as dracut writes it; the sysroot copy stays the user's
+	run_cmd -s "install -v -m 0600 -o $(id -u) -g $(id -g) ${PLATFORM_PATH}/lfs/boot/${INITRAMFS_NAME} ${BIN_PATH}/boot/${INITRAMFS_NAME}" >>${LOG_PATH}/images_lfs.log
 
 	### The image is built and its post install scripts have run: --tag lfs is what makes these
 	### run now, in the chroot of the image, instead of going into the post install script
