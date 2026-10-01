@@ -158,7 +158,8 @@ KERNEL_VER=$( package_version lfs/kernel )
 ### Security
 	build lfs/sudo
 ### Network Servers/Clients
-	build lfs/bind9
+	### The resolver tools only (dig, host, nslookup, nsupdate, delv): the image runs no name server
+	build lfs/bind9:client
 	### ISC DHCP is end of life (2022) and nothing uses it: systemd-networkd and NetworkManager
 	### have their own DHCP client, networkd a DHCP server too
 	#build lfs/dhcp
