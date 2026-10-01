@@ -100,7 +100,8 @@ fi
 ### gpio expander probes there too, only logging errors as it goes. A board that boots from anything
 ### but an SD card has no mmcblk0 either, and is held to the strict check, which is the right default.
 EMULATED=0
-if [ "$(cat /sys/block/mmcblk0/device/name 2>/dev/null)" == 'QEMU!' ]
+### A virtual machine of a generic platform (virtio disks, no SD card) is told by its firmware tables
+if [ "$(cat /sys/block/mmcblk0/device/name 2>/dev/null)" == 'QEMU!' ] || systemd-detect-virt -q --vm 2>/dev/null
 then
 	EMULATED=1
 	KNOWN_ERRORS="${KNOWN_ERRORS}|${EMULATED_ERRORS}"
@@ -232,7 +233,7 @@ do
 	STATUS=$(systemctl is-enabled "${unit}" 2>/dev/null)
 	case ${STATUS} in
 		enabled|enabled-runtime|static|indirect) ok "${unit} ${STATUS}" ;;
-		"") skip "${unit} not installed" ;;
+		""|not-found) skip "${unit} not installed" ;;
 		*) bad "${unit} ${STATUS}, it should start by itself" ;;
 	esac
 done
@@ -241,7 +242,7 @@ do
 	STATUS=$(systemctl is-enabled "${unit}" 2>/dev/null)
 	case ${STATUS} in
 		disabled|masked) ok "${unit} ${STATUS}" ;;
-		"") skip "${unit} not installed" ;;
+		""|not-found) skip "${unit} not installed" ;;
 		*) bad "${unit} ${STATUS}, it should not start by itself" ;;
 	esac
 done
