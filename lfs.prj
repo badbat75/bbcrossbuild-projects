@@ -327,6 +327,15 @@ function build_lfs_image () {
 				kernel=${KERNEL_NAME}
 				auto_initramfs=1
 			EOF
+			### The Pi 3 Model B (board type 0x8 of the revision code, not the 3B+) has no flow control to
+			### its Bluetooth: 460800 baud instead of the 921600 of its device tree, as Raspberry Pi
+			### advises (raspberrypi/firmware#1150), gives the PL011 twice the time to empty its FIFO.
+			### The boot, with the WiFi firmware loaded at the same moment, is pi-bluetooth_0's hci-uart-after-wifi
+			cat >>${BIN_PATH}${LFS_BOOTDIR}/config.txt <<-EOF
+				[board-type=0x8]
+				dtparam=krnbt_baudrate=460800
+				[all]
+			EOF
 			### cgroup_enable=memory: the Raspberry Pi kernel leaves the memory controller off by default;
 			### the others do not know the parameter and hand it to user space
 			cat >${BIN_PATH}${LFS_BOOTDIR}/cmdline.txt <<-EOF
