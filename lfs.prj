@@ -203,6 +203,7 @@ KERNEL_VER=$( package_version lfs/kernel )
 		build lfs/binutils
 		build lfs/gcc:binaries
 		build lfs/llvm
+		build lfs/llvm:lldb
 		build lfs/rust
 		build lfs/gdb
 		build lfs/make
