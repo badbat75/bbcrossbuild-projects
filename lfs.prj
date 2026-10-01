@@ -185,6 +185,9 @@ setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-pytho
 	build lfs/font-xfree86-type1
 	build lfs/liberation-fonts-ttf
 	build lfs/liberation-narrow-fonts-ttf
+	### Tk with Xft and the bidirectional text of HarfBuzz over the bootstrap one of the cross Python
+	### (tkinter of lfs/python3 links the same library)
+	build lfs/Tk
 ### Gnome
 	build lfs/Cairo
 	### The SVG loader of gdk-pixbuf: it links librsvg, which Cairo builds
