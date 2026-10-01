@@ -61,7 +61,9 @@ KERNEL_LTOENABLE=thin
 	build lfs/create-base-config_1.0
 ### Basic toolchain and core libraries
 setup_full_toolchain --with-main-gcc --with-llvm --with-python
-### Kernel core, boot loaders, utilities and firmwares
+### Kernel core, boot loaders, utilities and firmwares: the version of lfs/kernel (KERNEL_VER of
+### lfs.conf overrides it), which picks the rpi-kernel recipe and names the kernel of GRUB
+KERNEL_VER=$( package_version lfs/kernel )
 	case ${PLATFORM_NAME} in
 		rpi*)
 			WITH_INITRAMFS=1 WITH_KERNEL_FS=${LFS_FSTYPE} build raspberrypi/rpi-kernel_$( echo ${KERNEL_VER} | cut -d'.' -f1,2 )
