@@ -60,7 +60,7 @@ KERNEL_LTOENABLE=thin
 	build lfs/create-base-fs_1.0
 	build lfs/create-base-config_1.0
 ### Basic toolchain and core libraries
-setup_full_toolchain --with-gnu-install --with-main-gcc --with-llvm --with-python
+setup_full_toolchain --with-main-gcc --with-llvm --with-python
 ### Kernel core, boot loaders, utilities and firmwares
 	case ${PLATFORM_NAME} in
 		rpi*)
