@@ -4,7 +4,6 @@ LFS_ENABLESSH=${LFS_ENABLESSH:-1}
 LFS_ENABLEDEV=${LFS_ENABLEDEV:-0}
 LFS_HOSTNAME=${LFS_HOSTNAME:-lfs}
 LFS_FSTYPE=${LFS_FSTYPE:-ext4}
-LFS_FSSIZE=${LFS_FSSIZE:-8G}
 LFS_WLANDEV=${LFS_WLANDEV:-wlan0}
 ### DHCP on the wired interface (net.ifnames=0 on the kernel command line names it eth0 on every
 ### platform); LFS_LANDEV= in lfs.conf leaves it unconfigured
@@ -294,7 +293,11 @@ function build_lfs_image () {
 			LFS_BOOTDIR=/boot
 		;;
 	esac
-	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_FSSIZE} --boottype ${LFS_BOOTTYPE} --bootdir ${LFS_BOOTDIR}
+	### The size of the image follows the sysroot: binary_size, with room to spare, rounded for QEMU
+	### (a power of two for the SD card of the Raspberry Pi)
+	LFS_IMAGESIZE=$( binary_size )
+	echo "LFS image size: ${LFS_IMAGESIZE}"
+	create_image lfs --rootfstype ${LFS_FSTYPE} --size ${LFS_IMAGESIZE} --boottype ${LFS_BOOTTYPE} --bootdir ${LFS_BOOTDIR}
 	mount_tag lfs --mountlist "2:/ 1:${LFS_BOOTDIR}"
 
 	### Boot configuration and support scripts
