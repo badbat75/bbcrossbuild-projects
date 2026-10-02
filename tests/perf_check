@@ -1,0 +1,222 @@
+#!/bin/bash
+# perf_check: measure the speed of a system built by bbxb while it runs, to compare two images on the
+# same board (another toolchain, other optimization flags of bbxb.conf). board_check says whether the
+# system works; this says how fast it is, with the programs the image already has.
+#
+#	scp tests/perf_check <host>:/tmp/ && ssh <host> sudo /tmp/perf_check > perf-<image>.tsv
+#
+# Standard output is one line per measurement, "<metric><TAB><value><TAB><unit>", the median of
+# PERF_REPEAT runs (default 5; 3 for the slow ones); the progress goes to standard error. Two files
+# are compared with: join -t $'\t' <(sort a.tsv) <(sort b.tsv)
+#
+# The boot time is the one of the boot that is running (systemd-analyze): reboot between runs and
+# take the median of several boots. The work runs in a tmpfs of its own, on data generated here, so
+# neither the card nor the content of the image changes what is measured; the governor is
+# performance while it runs. A board that throttles (vcgencmd get_throttled) measures nothing:
+# check the throttled lines, before and after.
+
+set -u
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin:${PATH}
+export LC_ALL=C
+
+REPEAT=${PERF_REPEAT:-5}
+REPEAT_SLOW=$(( REPEAT < 3 ? REPEAT : 3 ))
+WORKDIR=/run/perf_check
+
+function progress () { printf '%s\n' "${*}" >&2; }
+function result () { printf '%s\t%s\t%s\n' "${1}" "${2}" "${3}"; }
+
+### median: the median of the numbers on standard input
+function median () {
+	sort -g | awk '{ v[NR] = $1 } END { if (NR == 0) exit; if (NR % 2) print v[(NR + 1) / 2]; else printf "%.3f\n", (v[NR / 2] + v[NR / 2 + 1]) / 2 }'
+}
+
+### seconds <command...>: the seconds the command takes, its output discarded
+function seconds () {
+	local START END
+	START=$(date +%s%N)
+	"${@}" > /dev/null 2>&1
+	END=$(date +%s%N)
+	awk -v s="${START}" -v e="${END}" 'BEGIN { printf "%.3f\n", (e - s) / 1e9 }'
+}
+
+### measure <metric> <repeat> <command...>: the median seconds of the command, as one result
+function measure () {
+	local METRIC=${1} TIMES=${2} RUN
+	shift 2
+	progress "${METRIC}"
+	for (( RUN = 0; RUN < TIMES; RUN++ ))
+	do
+		sync
+		seconds "${@}"
+	done | median | while read -r VALUE
+	do
+		result "${METRIC}" "${VALUE}" s
+	done
+}
+
+### loop <count> <command...>: the command count times, for the start up of a program
+function loop () {
+	local COUNT=${1} I
+	shift
+	for (( I = 0; I < COUNT; I++ ))
+	do
+		"${@}"
+	done
+}
+
+function cleanup () {
+	cd /
+	if [ -n "${GOVERNORS:-}" ]
+	then
+		local CPU=0 GOVERNOR
+		for GOVERNOR in ${GOVERNORS}
+		do
+			echo "${GOVERNOR}" > "/sys/devices/system/cpu/cpu${CPU}/cpufreq/scaling_governor" 2> /dev/null || true
+			CPU=$(( CPU + 1 ))
+		done
+	fi
+	if mountpoint -q "${WORKDIR}"
+	then
+		umount "${WORKDIR}"
+	fi
+	rmdir "${WORKDIR}" 2> /dev/null || true
+}
+
+function throttled () {
+	if command -v vcgencmd > /dev/null
+	then
+		result "throttled_${1}" "$(vcgencmd get_throttled | cut -d= -f2)" flags
+		result "temperature_${1}" "$(vcgencmd measure_temp | sed 's/[^0-9.]//g')" C
+	fi
+}
+
+if [ "$(id -u)" -ne 0 ]
+then
+	echo "perf_check: run it as root (governor, tmpfs, caches)" >&2
+	exit 1
+fi
+trap cleanup EXIT
+
+### The system
+result kernel "$(uname -r)" release
+result compiler "$(readelf -p .comment "$(readlink -f /usr/bin/bash)" 2> /dev/null | grep -oE 'clang version [0-9.]+|GCC: \(GNU\) [0-9.]+' | tail -1 | tr ' ' '_')" bash
+result linker "$(readelf -p .comment "$(readlink -f /usr/bin/bash)" 2> /dev/null | grep -oE 'mold [0-9.]+|Linker: LLD [0-9.]+' | head -1 | tr ' ' '_')" bash
+throttled before
+
+### The boot that is running
+progress boot
+systemctl is-system-running --wait > /dev/null 2>&1 || true
+systemd-analyze time 2> /dev/null | head -1 | grep -oE '[0-9.]+(ms|s) \([a-z]+\)' | while read -r TIME PART
+do
+	case ${TIME} in
+		*ms)	TIME=$(awk -v t="${TIME%ms}" 'BEGIN { printf "%.3f", t / 1000 }') ;;
+		*)		TIME=${TIME%s} ;;
+	esac
+	result "boot_${PART//[()]/}" "${TIME}" s
+done
+result boot_userspace_units "$(systemd-analyze blame 2> /dev/null | wc -l)" units
+
+### The memory of the system once it has started, and the size of the programs
+grep -E '^(MemTotal|MemAvailable):' /proc/meminfo | while read -r NAME VALUE _
+do
+	result "memory_${NAME%:}" $(( VALUE / 1024 )) MiB
+done
+for PROCESS in systemd systemd-journald systemd-udevd systemd-networkd systemd-resolved sshd
+do
+	RSS=$(ps -o rss= -C "${PROCESS}" 2> /dev/null | awk '{ s += $1 } END { print s + 0 }')
+	result "rss_${PROCESS}" $(( RSS / 1024 )) MiB
+done
+result size_usr "$(du -sxm /usr 2> /dev/null | cut -f1)" MiB
+
+### The work: the governor at performance, a tmpfs, the data generated
+GOVERNORS=$(cat /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor 2> /dev/null | tr '\n' ' ')
+for GOVERNOR in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor
+do
+	echo performance > "${GOVERNOR}" 2> /dev/null || true
+done
+mkdir -p "${WORKDIR}"
+mount -t tmpfs -o size=256m perf_check "${WORKDIR}"
+cd "${WORKDIR}" || exit 1
+progress "generating the data"
+seq 1 400000 | awk '{ printf "%d %d %s lorem ipsum dolor sit amet %x\n", $1, ($1 * 7919) % 104729, ($1 % 3 ? "alpha" : "beta"), $1 * 31 }' > data.txt
+result data_size $(( $(stat -c %s data.txt) / 1048576 )) MiB
+
+### The start up of programs: the dynamic loader, the relocations, the libraries they load
+measure startup_true_x500 "${REPEAT}" loop 500 /usr/bin/true
+measure startup_ls_x500 "${REPEAT}" loop 500 ls /
+measure startup_systemctl_x100 "${REPEAT}" loop 100 systemctl --version
+measure startup_python3_x20 "${REPEAT}" loop 20 python3 -c pass
+measure startup_perl_x100 "${REPEAT}" loop 100 perl -e 1
+
+### Compression, one thread
+measure xz6_compress "${REPEAT_SLOW}" xz -6 -T1 -k -f data.txt
+xz -6 -T1 -k -f data.txt
+measure xz_decompress "${REPEAT}" xz -d -T1 -k -f -c data.txt.xz
+measure zstd10_compress "${REPEAT_SLOW}" zstd -10 -T1 -q -f data.txt -o data.txt.zst
+zstd -10 -T1 -q -f data.txt -o data.txt.zst
+measure zstd_decompress "${REPEAT}" zstd -d -T1 -q -c data.txt.zst
+measure gzip6_compress "${REPEAT_SLOW}" sh -c 'gzip -6 -c data.txt > data.txt.gz'
+measure sort_text "${REPEAT_SLOW}" sh -c 'sort -k3,3 -k2,2n data.txt > sorted.txt'
+
+### Crypto, one thread: openssl speed, machine readable, bytes per second of blocks of 16 KiB
+for ALGORITHM in sha256 aes-128-gcm chacha20-poly1305
+do
+	progress "openssl ${ALGORITHM}"
+	case ${ALGORITHM} in
+		sha256)	ARGS=(sha256) ;;
+		*)		ARGS=(-evp "${ALGORITHM}") ;;
+	esac
+	for (( RUN = 0; RUN < REPEAT_SLOW; RUN++ ))
+	do
+		openssl speed -mr -seconds 2 -bytes 16384 "${ARGS[@]}" 2> /dev/null | awk -F: '/^\+F:/ { printf "%.1f\n", $4 / 1048576 }'
+	done | median | while read -r VALUE
+	do
+		result "openssl_${ALGORITHM}" "${VALUE}" MiB/s
+	done
+done
+
+### SQLite: inserts in one transaction, an index, aggregate queries, on a file of the tmpfs
+cat > workload.sql <<-'EOF'
+	PRAGMA journal_mode = WAL;
+	CREATE TABLE t (id INTEGER PRIMARY KEY, k INTEGER, name TEXT, value REAL);
+	BEGIN;
+	WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c WHERE x < 200000)
+	INSERT INTO t (k, name, value) SELECT (x * 7919) % 1000, 'name' || (x % 5000), x * 0.5 FROM c;
+	COMMIT;
+	CREATE INDEX t_k ON t (k);
+	SELECT k, count(*), sum(value) FROM t GROUP BY k ORDER BY 3 DESC LIMIT 5;
+	SELECT count(DISTINCT name) FROM t WHERE k BETWEEN 100 AND 600;
+	SELECT a.k, count(*) FROM t a JOIN t b ON a.id = b.id + 1 WHERE a.k < 50 GROUP BY a.k;
+EOF
+measure sqlite_workload "${REPEAT_SLOW}" sh -c 'rm -f perf.db*; sqlite3 perf.db < workload.sql'
+
+### Python: the interpreter on integers, dictionaries, strings, json and regular expressions
+cat > workload.py <<-'EOF'
+	import json, re
+	total = 0
+	for i in range(1500000):
+	    total += i * i % 7
+	d = {}
+	for i in range(300000):
+	    d[str(i)] = i
+	s = sum(d[k] for k in d if k.endswith("7"))
+	text = "-".join(str(i) for i in range(200000))
+	words = re.findall(r"\d{3}-\d{2}", text)
+	data = json.dumps([{"i": i, "s": str(i) * 3} for i in range(100000)])
+	back = json.loads(data)
+	print(total, s, len(words), len(back))
+EOF
+measure python_workload "${REPEAT_SLOW}" python3 workload.py
+
+### Processes: fork and exec of a pipeline
+function pipelines () {
+	local I
+	for (( I = 0; I < 200; I++ ))
+	do
+		echo "${I}" | grep -c 1 > /dev/null
+	done
+}
+measure pipeline_x200 "${REPEAT}" pipelines
+
+throttled after
