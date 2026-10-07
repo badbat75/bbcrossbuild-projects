@@ -235,9 +235,15 @@ set_locale en_US.UTF-8
 
 if [ ${LFS_ENABLENM} -eq 1 ]
 then
-	### NetworkManager: DNS stays with systemd-resolved, the wired link gets the automatic DHCP
-	### connection of NetworkManager (LFS_LANDEV is not needed), the WiFi network a keyfile profile
+	### NetworkManager: DNS stays with systemd-resolved, the wired link and the WiFi network get a
+	### keyfile profile each, from the same settings as the .network files of systemd-networkd. The
+	### automatic connection NetworkManager makes without one follows the link-local-only mark udev
+	### puts on some devices (the usb-net of QEMU had a 169.254 address and no DHCP)
 	configure_networkmanager --dns systemd-resolved
+	if [ -n "${LFS_LANDEV}" ]
+	then
+		configure_network ${LFS_LANDEV} --networkmanager
+	fi
 	if [ -n "${LFS_WLANSSID}" ] && [ -n "${LFS_WLANPSK}" ] && [ -n "${LFS_WLANDEV}" ]
 	then
 		### The passphrase goes through the pipe, never on a command line: the profile gets the key
@@ -338,7 +344,7 @@ function build_lfs_image () {
 			### The Pi 3 Model B (board type 0x8 of the revision code, not the 3B+) has no flow control to
 			### its Bluetooth: 460800 baud instead of the 921600 of its device tree, as Raspberry Pi
 			### advises (raspberrypi/firmware#1150), gives the PL011 twice the time to empty its FIFO.
-			### The boot, with the WiFi firmware loaded at the same moment, is pi-bluetooth_0's hci-uart-after-wifi
+			### A Bluetooth that stops answering all the same is powered again by pi-bluetooth_0 (hci-uart-recover)
 			cat >>${BIN_PATH}${LFS_BOOTDIR}/config.txt <<-EOF
 				[board-type=0x8]
 				dtparam=krnbt_baudrate=460800
